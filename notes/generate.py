@@ -123,8 +123,6 @@ def write_assets():
     shutil.copytree(IMAGES_PATH, os.path.join(DEST_ROOT_PATH, IMAGES_PATH))
     print('copying css to {}'.format(DEST_ROOT_PATH))
     shutil.copytree(CSS_PATH, os.path.join(DEST_ROOT_PATH, CSS_PATH))
-    print('copying assets to {}'.format(DEST_ROOT_PATH))
-    shutil.copytree(ASSETS_PATH, os.path.join(DEST_ROOT_PATH, ASSETS_PATH))
 
 
 def write_website(base_url):
