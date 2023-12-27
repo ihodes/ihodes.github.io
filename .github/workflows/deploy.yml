@@ -45,7 +45,6 @@ jobs:
         with:
           path: "dist/"
 
-      - name: 
 
   deploy:
     # Add a dependency to the build job
