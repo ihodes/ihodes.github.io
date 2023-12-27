@@ -32,8 +32,7 @@ jobs:
       - name: Run a multi-line script
         run: |
           poetry install
-          poetry shell
-          python notes
+          poetry run python notes
 
       - name: Fix permissions
         run: |
