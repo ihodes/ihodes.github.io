@@ -104,7 +104,7 @@ There's a lot of writing out there on refining and expanding on all of the above
 
 
 
-
+[^excalidraw]: Drawing is hugely valuable, and sometimes a diagram or picture really is worth 1000 words. I regularly use [Excalidraw](https://excalidraw.com/).
 
 [^metaproductivity]: Being productivity means executing tasks. Implementing a personal productivity system is metaproductive; it enables the execution of tasks, but is not productive in itself. Don't get metaproductivity confused with productivity: this is an easy trap to fall into.
 

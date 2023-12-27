@@ -42,9 +42,9 @@ So you can see what happened there. You "built" a new Double with value 1.2, whi
 
 For instance, to parse a Double value out of a string, we can use the static method (meaning we don't need a particular instance of Double, we can just call it like we called sqrt from the Math class) parseDouble(String s):
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (Double/parseDouble "1.2") => 1.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 Nothing too tricky there. Notice how the argument of the method is a String, so we pass a string as an argument to the method.
 
@@ -52,12 +52,12 @@ Nothing too tricky there. Notice how the argument of the method is a String, so 
 
 Say we want to use a Java class that we initialized to something. Not too difficult:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (-> (String. "Hey there") ;; make a new String object
     (.toUpperCase))       ;; pass it to .toUpperCase (look up -> to see what it does)
                            ;; toUpperCase is a non-static method
 => "HEY THERE"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 So now we've used a method which is not static, and which requires a real, live String object to deal with. Let's look at how the docs say it works:
 
@@ -81,24 +81,24 @@ Since you deal with mutable data and classes in Java, you need to be able to app
 
 For instance, say we're dealing with a JFrame from the `javax.swing` library. We might need to do a number of things to it, not with it (you generally operate *with* values, not *on* them in functional languages). We can, like this:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (doto (JFrame. "My Frame!");; clever name
       (.setContentPane ... here we'd add a JPanel or something to the JFrame)
       (.pack) ;; this simply arranges the stuff in the frame
       (.setVisibleTrue)) ;; this makes the Frame visible
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 `doto` just passes its first argument to all the other functions you supply it, and passes it as the first argument to them. So here we're just doing a lot of things to the JFrame that don't return anything in particular. All these methods are listed as methods of the JFrame in the documentation (or its superclasses don't worry about those yet).
 
 Alternatively, we could do something like this:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (def frame (JFrame. "I'm a Frame!"))
 (do ;; do just evaluates everything in its body, in order
       ;; and returns the value of the final expression
     (.pack frame) ;; = frame.pack(); in Java
     (. setVisible frame true)0 ;; = frame.setVisible(true);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 ## Notes
 

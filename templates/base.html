@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% block head %}
+    <title>{% block title required %}{% endblock %}</title>
+    
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="index"/>
+
+    <link rel="stylesheet" href="css/style.css" />
+    {% endblock %}
+  </head>
+  <body>
+    {% block content required %}{% endblock %}
+
+    <p id="copy">Copyright &copy; 2010–2024 Isaac Hodes. Source found <a href="https://github.com/ihodes/notes">here</a>.</p>
+  </body>
+</html>

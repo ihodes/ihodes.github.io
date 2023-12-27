@@ -6,14 +6,12 @@ categories: random
 date: 2013-03-27
 ---
 
-<section>
+
 I was part of a fun little excursion into the world of fintech (née “financial technology”) this weekend. At the [FinTech hackathon](http://www.fintechhack.com/) in New York, [Ben Gundersen](http://github.com/bgun), an extemely talented guy and a wizard with JS, and I wrote a simple visualization tool we call “GlobalFX”. The idea was to create an interesting and somewhat useful way to view foreign exchange rates over time.
 
-<p>
 
 First, a quick shout out to some awesome companies who helped us out. Some wonderful people (thanks, Francesca and Matt!) at [10Gen](http://www.10gen.com/) got us in touch with the [MongoHQ](mongohq.com) folks who, at 11PM EST on a Saturday, spun up a 20GB MongoDB instance for us. Right before that, Tammer at [Quandle](http://quandl.com/) basically gave us unlimited API calls. We also used [Oanda](http://www.oanda.com) (who have incredibly fast data serving ability), and intend to integrate them even more fully with the application in the coming days.
-</p>
-</section>
+
 
 
 ## The Problem & Solution
