@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Everyday personal productivity"
+title: Everyday personal productivity
 subtitle: ""
 summary: A description of a simple and effective personal productivity system.
 categories: productivity

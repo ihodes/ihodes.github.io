@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Next Generation Sequencing: A Gentle Introduction"
+title: Next Generation Sequencing: A Gentle Introduction
 subtitle: "A Gentle Introduction for the Slightly Bewildered"
 summary: Wherein next generation sequencing and its applications are discussed.
 categories: genomics bioinformatics
