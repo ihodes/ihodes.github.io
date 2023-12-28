@@ -14,6 +14,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 DEST_ROOT_PATH = "./dist/"
 POST_PATH = "p"
 CSS_PATH = "css"
+JS_PATH = "js"
 IMAGES_PATH = "images"
 ASSETS_PATH = "assets"
 
@@ -123,6 +124,8 @@ def write_assets():
     shutil.copytree(IMAGES_PATH, os.path.join(DEST_ROOT_PATH, IMAGES_PATH))
     print('copying css to {}'.format(DEST_ROOT_PATH))
     shutil.copytree(CSS_PATH, os.path.join(DEST_ROOT_PATH, CSS_PATH))
+    print('copying js to {}'.format(DEST_ROOT_PATH))
+    shutil.copytree(JS_PATH, os.path.join(DEST_ROOT_PATH, JS_PATH))
 
 
 def write_website(base_url):
