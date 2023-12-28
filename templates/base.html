@@ -11,15 +11,23 @@
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="/css/pygmentize-solarized-light.css" />
     <script>
-      MathJax = {
-	  tex: {inlineMath: [['$$', '$$']]}
-      };
     </script>
     <script id="MathJax-script" async src="/js/mathjax.js"></script>
     {% endblock %}
   </head>
   <body>
-    {% block content required %}{% endblock %}
+    <div id="nav">
+      <p>By <strong>Isaac&nbsp;Hodes</strong></p>
+      
+      <ul>
+	<li><a href="/" title="all articles">all articles</a></li>
+	<li><a href="/about" title="about">about</a></li>
+      </ul>
+    </div>
+
+    <section id="content">
+      {% block content required %}{% endblock %}
+    </section>
 
     <p id="copy">Copyright &copy; 2010–2024 Isaac Hodes. Source found <a href="https://github.com/ihodes/ihodes.github.io">here</a>.</p>
   </body>

@@ -7,7 +7,6 @@ categories: genomics bioinformatics
 date: 2014-08-05
 ---
 
-<section>
 
 DNA sequencing is the process by which we extract from raw cells a string of
 As, Cs, Ts, and Gs, known as a DNA sequence.
@@ -15,7 +14,6 @@ As, Cs, Ts, and Gs, known as a DNA sequence.
 To understand why and how we are able to do this, it is helpful to understand
 a bit of the history of genetics.
 
-</section>
 
 ## A Brief and Incomplete History of the Gene
 

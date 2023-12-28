@@ -6,7 +6,6 @@ categories: databases
 date: 2014-09-07
 ---
 
-<section>
 
 I've recently run into a couple behaviors which I found odd with respect to how
 SQLite decided to execute a particular query (and those with some similar
@@ -16,7 +15,6 @@ soon found myself reading the source, tracing syscalls and library calls, and
 debugging the opcodes from the VM that SQLite implements. I learned an
 incredible amount, and had a lot of fun. Some of my findings are below.
 
-</section>
 
 ---
 
@@ -26,7 +24,7 @@ This is the pared-down query that my discoveries center around, but my questions
 aren't necessarily specific to this query (there ends up being a whole class of
 queries which result in the same "optimization"):
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.sql}
+```sql
     SELECT a.v_id
     FROM a, l, v, m
     WHERE l.l_cid = 300
@@ -34,7 +32,7 @@ queries which result in the same "optimization"):
       AND v.id = l.v_id
       AND a.v_id = v.id
     LIMIT 10;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 With `ANALYZE` (and subsequent `SELECT * FROM sqlite_stat1;`, we see some stats
 for our tables:

@@ -17,7 +17,7 @@ Used in architecture, painting, drawing, and many works of adulatory prose, φ h
 
 As already mentioned, the Golden Ratio can be calculated using the Fibonacci sequence. In order to do that, though, we need the Fibonacci sequence. I've decided to make a lazy version of the sequence, so we can think of it as an infinite sequence. I split my fibo into two parts: fibo-from, which gives you the entire sequence after the point you give it, and fibo, which gives you the entire sequence.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (defn fibo-from [n-2 n-1]
   (lazy-seq
    (cons (+ n-2 n-1)
@@ -26,20 +26,20 @@ As already mentioned, the Golden Ratio can be calculated using the Fibonacci seq
 (defn fibo []
   (concat [0 1]
           (fibo-from 0 1)))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 Now we can continue on to deriving φ: Let's look at the first 20 ratios:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (map (fn [[x y]] (/ y x))
      (drop 1 (partition 2 1 (take 22 (fibo)))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 If we map double (the function) across the ratios we get in return, we can cleary see that we're getting closer and closer to the Golden Ratio. Of course, we'll never actually reach it. On the subject of ancient Greece, you could say φ [tantalizes][4] us.
 
 Another way of calculating our fickle ratio is with a simple continued fraction. I've generalized the simple-continued-fraction function from my [previous post on finding e][5], but the idea is the same:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (defn generalized-continued-fraction
   "Returns the value of the GCF of the sequences of numerators
    and denominators. 'denomseq must have one more element than
@@ -55,14 +55,14 @@ Another way of calculating our fickle ratio is with a simple continued fraction.
   [sequence]
   (generalized-continued-fraction
     (take (dec (count sequence)) (repeat 1)) sequence))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 The sequence that represents the Golden Ratio is rather simple and beautiful, and also surprising if you haven't seen it before. It is `1, 1, 1, 1, . . .` and so forth. Therefore using simple-continued-fraction to find it is trivial:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (double (simple-continued-fraction (take 1000 (repeat 1))))
 => 1.6180339…
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 ## Evil Lurks
 
@@ -70,7 +70,7 @@ But in this seemingly beautiful number, a dark secret hides. But first we need t
 
 But in order to get precise results, we need to get a precise representation of the Ratio. Here, we get to harness the power of Java! In this case, we're going to use the [BigDecimal][7] class.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (let [n (simple-continued-fraction (take 1000 (repeat 1)))]
   (.divide (BigDecimal. (numerator n))
            (BigDecimal. (denominator n))
@@ -80,21 +80,21 @@ But in order to get precise results, we need to get a precise representation of 
 354486227052604628189024497072072041893911374847540880753868
 917521266338622235369317931800607667263544333890865959395829
 0563832266131992829026788M
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 Which looks about right.
 
 Now we need to see about getting the digits from the fractal portion of the number. To save time, I'm going to cheat a little, and transform the result into a string and obtain the digits from that. Assume that I've stored the result of the previous calculation in the var `gold`.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (map #(Integer. (str %))
      (drop 2 (str gold)))
 => (6 1 8 0 3 3 9 8 8 7 4 . . . ) ;; and so on
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 Now let's see how many numbers we have to take to get the [number of the beast][8]. Assume that our sequence of fractal digits found is stored in the var `goldseq`.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (defn sum [& xs] (reduce + xs))
 
 (loop [maybebeast (sum (take 1 goldseq)) n 1]
@@ -102,7 +102,7 @@ Now let's see how many numbers we have to take to get the [number of the beast][
         :else (recur (apply sum (take (inc n) goldseq))
                      (inc n))))
 => 146
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 And there you have it, the sum of the first 146 fractal digits of φ is 666. **Verified**: φ is evil. Of course, if it had not been evil, or it had taken the sum of more than 200 fractal digits to equal 666, this wouldn't have worked. It would have been easy to test though: continue testing the sum of the first *n* digits of the number until the sum exceeds 666. (Which could fail if we continue to get zeroes. Per the halting problem, we might never know if a number is evil, depending on its fractal component. Unless we could prove something else about it. But that's another story…)
 
