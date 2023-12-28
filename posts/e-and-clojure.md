@@ -6,12 +6,11 @@ categories: clojure programming math
 date: 2010-08-20
 ---
 
-<section>
 A few articles made the rounds a number of weeks ago, all talking about computing Euler's Number, e, using Clojure. It wasn't until I saw the idea on [Programming Praxis][2], though, that I decided to just do it.
 
 It's honestly a trivial problem; in fact, here's a little solution right up front:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (defn to-one []
   (loop [times 0 sum 0]
     (cond
@@ -22,7 +21,7 @@ It's honestly a trivial problem; in fact, here's a little solution right up fron
   [n]
   (/ (reduce + (repeatedly n to-one))
       n 1.0))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
     user> (time (to-one-avg 100000000))
 
@@ -51,7 +50,7 @@ An alternative for finding e can be represented nicely as the sum of a sequence:
 
 And it can be repreented just as nicely in Clojure! My sigma and factorial (fact) functions are not standard in Clojure, but they're both quite straightforward. Not only is it a pretty solution, but it's quite fast, and is just as accurate as our built-in Math/E.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (defn sigma
   "Sum of 'f across the range 's to 'e, inclusive."
   [s e f]
@@ -61,7 +60,7 @@ And it can be repreented just as nicely in Clojure! My sigma and factorial (fact
   "Returns the factorial of 'n."
   [n]
   (reduce * (range 1 (inc n))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
     user> (time (double (sigma 0 100 #(/ 1 (fact %)))))
     "Elapsed time: 7.998 msecs"
@@ -79,17 +78,17 @@ Yet another method for finding e involves continued fractions. Lucky for us, the
 
 One thing to notice is that we can represent that continued fraction as a sequence. The the numerators are always 1, so we just need a list of the integer part of the denominators. In this case, [1 0 1 1 2 1 1 4 1 1 6 1 1 8 1 1 … ]. That's fun enough to build in Clojure:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (defn efracs
   [n]
   (cons 1 (interleave
                 (filter even? (range n))
                 (repeat 1) (repeat 1))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 The trick becomes using this sequence build our continued fraction and calculate e. What first comes to mind is writing a recursive function that would destroy our stack. But instead of building it from the top down, let's think backwards. Let's instead construct our continued fraction from the bottom up, and end up at our final answer with a well-behaved stack.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.clojure}
+```clojure
 (defn simple-continued-fraction
   "Returns the final value of the SCF of 'coll."
   [coll]
@@ -99,7 +98,7 @@ The trick becomes using this sequence build our continued fraction and calculate
             :else (recur (rest coll) (+ (first coll) (/ h)))))))
 
 (time (simple-continued-fraction (efracs 30)))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
     "Elapsed time: 0.986 msecs"
     2.718281828459045
@@ -112,8 +111,8 @@ Now, I hate to break it to you, but these are not the methods used to calculate 
 
 There's a particular program called PiFast33 that was written by Xavier Gordon around the year 2000. That program, or variants of it, is what is being used to calculate e with such great precision. According to [this site][6], which appears to be connected to Gordon in some fashion, PiFast33 uses the alternating version of the series described above to calculate e. The error shrinks rapidly, allowing the digits of e to be verified and written to the storage file quickly and efficiently.
 
-<p>It looks like an interesting program to try to write; maybe I'll get the chance to hack it up and post about it soon.</p>
-</section>
+It looks like an interesting program to try to write; maybe I'll get the chance to hack it up and post about it soon.
+
 
  [1]: http://copperthoughts.com
  [2]: http://programmingpraxis.com/2010/08/13/e/

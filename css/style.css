@@ -1,3 +1,13 @@
+html {
+    margin:    0 auto;
+    max-width: 600px;
+}
+
+body {
+    /* whatever you want */
+}
+
 #copy {
+    padding-top: 33px;
     color: #343434
 }

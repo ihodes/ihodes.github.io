@@ -52,10 +52,12 @@ def process_post(post_path):
     post = markdown_post(post_path)
     title = post.metadata['title']
     slug = sluggify(title)
+    d = datetime.strptime(post.metadata['date'], '%Y-%m-%d')
     post_data = {
         'title': title,
         'url': os.path.join(POST_PATH, slug),
         'date': post.metadata['date'],
+        'formatted_date': d.strftime('%B %d, %Y'),
         'html': post,
         'metadata': post.metadata,
     }
@@ -72,10 +74,10 @@ def format_post(post, template=TEMPLATES['post']):
     format the post appropriately and return the formatted HTML.
     """
     md_html = post['html']
-    metadata = post['metadata']
     html_text = template.render(text=md_html,
-                                title=metadata['title'],
-                                date=metadata['date'])
+                                title=post['title'],
+                                date=post['date'],
+                                formatted_date=post['formatted_date'])
     return html_text
 
 
