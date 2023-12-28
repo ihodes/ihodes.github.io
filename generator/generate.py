@@ -13,6 +13,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 DEST_ROOT_PATH = "./dist/"
 POST_PATH = "p"
+ABOUT_PATH = "about"
 CSS_PATH = "css"
 JS_PATH = "js"
 IMAGES_PATH = "images"
@@ -25,7 +26,8 @@ ENV = Environment(
 
 TEMPLATES = {
     'post': ENV.get_template('post.html'),
-    'index': ENV.get_template('index.html')
+    'index': ENV.get_template('index.html'),
+    'about': ENV.get_template('about.html'),
 }
 
 
@@ -89,6 +91,11 @@ def format_index(template=TEMPLATES['index']):
     return html_text
 
 
+def format_about(template=TEMPLATES['about']):
+    html_text = template.render()
+    return html_text
+
+
 
 ############################################
 #   Writing to output directory (./dist)   #
@@ -103,6 +110,14 @@ def write_index():
     index_html = format_index()
     with open(os.path.join(DEST_ROOT_PATH, 'index.html'), 'w') as f:
         f.write(index_html)
+
+def write_about():
+    print("writing about page")
+    about_html = format_about()
+    about_path = os.path.join(DEST_ROOT_PATH, ABOUT_PATH)
+    pathlib.Path(about_path).mkdir(parents=True, exist_ok=True)
+    with open(os.path.join(about_path, 'index.html'), 'w') as f:
+        f.write(about_html)
 
 
 def write_posts():
@@ -137,6 +152,7 @@ def write_website(base_url):
     print('___starting website generation___')
     pathlib.Path(DEST_ROOT_PATH).mkdir(parents=True, exist_ok=True)
     write_index()
+    write_about()
     write_posts()
     write_assets()
     print('___completed___')

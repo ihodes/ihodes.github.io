@@ -1,13 +1,23 @@
 html {
-    margin:    0 auto;
+}
+
+#content {
+    position: relative;
+    margin-left: 200px;
     max-width: 600px;
 }
 
-body {
-    /* whatever you want */
+#nav {
+    width: 145px;
+    position: absolute;
+    text-align: right;
+    line-height: 1em;
+}
+#nav li {
+    list-style-type: none;
 }
 
 #copy {
-    padding-top: 33px;
+    padding: 33px 33px;
     color: #343434
 }
