@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "notes"
+name = "generator"
 version = "0.0.1"
 description = "Isaac's blog."
 authors = ["ihodes <isaachodes@gmail.com>"]
