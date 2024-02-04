@@ -81,17 +81,14 @@ dt + dd {
   font-style: italic; 
 }
 
-#content {
-    position: relative;
-    margin-left: 200px;
-    max-width: 600px;
-}
+
 
 #nav {
     width: 145px;
     position: absolute;
     text-align: right;
     line-height: 1em;
+    padding-top: 9px;
 }
 #nav li {
     list-style-type: none;
@@ -99,6 +96,20 @@ dt + dd {
 #nav ul li {
   margin-bottom: 10px; 
 }
+
+#content {
+    position: relative;
+    margin-left: 200px;
+    max-width: 600px;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+#content h1 {
+  margin-top: 0;
+  padding-top: 0;
+}
+
 
 
 span#date {
