@@ -137,3 +137,40 @@ section.logos a:hover {
     text-decoration: none;
 }
 
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1a1a2e; 
+    color: #c7c7c7;
+  }
+
+  a {
+    color: #4db8ff;
+  }
+
+  a:hover {
+    color: #66ccff;
+    text-decoration: underline;
+  }
+
+  h1, h2, h3, h4, h5, h6, h7 {
+    color: #a9a9a9; 
+  }
+
+
+  ul#posts li a, ul#posts li span.date {
+    color: #dcdcdc;
+  }
+
+  .logo {
+      filter: invert(100%) grayscale(100%);
+  }
+
+  #nav, #copy {
+    color: #c7c7c7;
+  }
+
+  dt, dd {
+    color: #c7c7c7;
+  }
+}
