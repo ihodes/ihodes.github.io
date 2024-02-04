@@ -185,3 +185,77 @@ section.logos a:hover {
     color: #c7c7c7;
   }
 }
+
+
+@media screen and (max-width: 768px) {
+  body {
+      padding: 10px;
+  }
+
+  #nav {
+    width: 100%;
+    position: static;
+    text-align: center;
+    padding-top: 0px;
+  }
+
+  #nav ul {
+    padding: 0;
+    margin: 0 auto;
+    display: inline-block;
+    text-align: left;
+  }
+
+  #nav li {
+    display: inline; 
+    margin-right: 10px;
+  }
+
+  #content {
+    margin-left: 0;
+    margin-top: 20px;
+    max-width: none;
+  }
+
+  #content h1 {
+    font-size: 1.5em;
+  }
+  
+  .logo {
+    width: 15px; 
+    height: 15px;
+  }
+
+  h1 {
+    font-size: 24px;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  ul#posts {
+    padding: 0; 
+    list-style-type: none;
+  }
+
+  ul#posts li {
+    background-color: transparent;
+    margin-bottom: 15px;
+    padding: 10px 5px;
+    border-bottom: 1px solid #ccc;
+  }
+
+  ul#posts li a {
+      color: #2a9d8f;
+    font-weight: normal;
+    font-size: 18px;
+  }
+
+  ul#posts li span.date {
+    display: block;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+}
+
