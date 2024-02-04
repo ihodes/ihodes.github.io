@@ -24,8 +24,27 @@ h1, h2, h3, h4, h5, h6, h7 {
 }
 
 p, ul, ol, dl, dt, dd, h1, h2, h3, h4, h5, h6, h7 {
-  margin-top: 0;
-  margin-bottom: 1em;
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+ul#posts {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+ul#posts li {
+    margin-bottom: 5px;
+    padding: 5px;
+}
+
+ul#posts li a {
+    font-weight: bold;
+}
+
+ul#posts li span.date {
+  color: #777;
+  margin-right: 5px;
 }
 
 
@@ -90,3 +109,31 @@ span#date {
     padding: 33px 33px;
     color: #343434
 }
+
+#family-photo {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto; 
+  
+}
+
+
+.logo {
+  display: inline-block;
+  vertical-align: middle;
+  width: 20px;
+  height: 20px;
+  margin: 0 10px;
+  transition: transform 0.1s ease;
+  filter: grayscale(100%);
+}
+
+.logo:hover {
+    transform: scale(1.2) rotate(10deg);
+}
+
+section.logos a:hover {
+    text-decoration: none;
+}
+
