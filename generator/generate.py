@@ -14,6 +14,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 DEST_ROOT_PATH = "./dist/"
 POST_PATH = "p"
 ABOUT_PATH = "about"
+SHELF_PATH = "shelf"
 CSS_PATH = "css"
 JS_PATH = "js"
 IMAGES_PATH = "images"
@@ -28,6 +29,7 @@ TEMPLATES = {
     'post': ENV.get_template('post.html'),
     'index': ENV.get_template('index.html'),
     'about': ENV.get_template('about.html'),
+    'shelf': ENV.get_template('shelf.html'),
 }
 
 
@@ -96,6 +98,11 @@ def format_about(template=TEMPLATES['about']):
     return html_text
 
 
+def format_shelf(template=TEMPLATES['shelf']):
+    html_text = template.render()
+    return html_text
+
+
 
 ############################################
 #   Writing to output directory (./dist)   #
@@ -118,6 +125,15 @@ def write_about():
     pathlib.Path(about_path).mkdir(parents=True, exist_ok=True)
     with open(os.path.join(about_path, 'index.html'), 'w') as f:
         f.write(about_html)
+
+
+def write_shelf():
+    print("writing shelf page")
+    shelf_html = format_shelf()
+    shelf_path = os.path.join(DEST_ROOT_PATH, SHELF_PATH)
+    pathlib.Path(shelf_path).mkdir(parents=True, exist_ok=True)
+    with open(os.path.join(shelf_path, 'index.html'), 'w') as f:
+        f.write(shelf_html)
 
 
 def write_posts():
@@ -153,6 +169,7 @@ def write_website(base_url):
     pathlib.Path(DEST_ROOT_PATH).mkdir(parents=True, exist_ok=True)
     write_index()
     write_about()
+    write_shelf()
     write_posts()
     write_assets()
     print('___completed___')
