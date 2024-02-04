@@ -47,21 +47,21 @@ At the very least, this is an interesting definition of the natural numbers. The
 
 Let's see how we can represent this with lists. Our goal is a function, *S*, that returns the successor of a given list.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define S
       (lambda (n)
         (union n (cons n ()))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 Perfect, though we don't exactly have a union function yet:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define union
       (lambda (n m)
         (cond ((null? n) m)
                (else (cons (car n)
                            (union (cdr n) m))))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 Now we do. You can test it out in your own REPL, or online with [TryScheme](http://tryscheme.sourceforge.net/). We're going to move on now.
 
@@ -73,7 +73,7 @@ Before we even get to addition and the like, let's look at one example of where 
 
 But first we need a better `eq?`. The current `eq?` operates only on atoms; we need an `equal?` that works on our list representation of numbers. To keep things simple, we're going to assume our lists are ordered. That will be the case if we build our numbers with just *S*.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define equal?
       (lambda (n m)
         (cond ((and (null? n) (null? m)) #t)
@@ -90,7 +90,7 @@ But first we need a better `eq?`. The current `eq?` operates only on atoms; we n
     (define <
         (lambda (n m)
            (member? n m)))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 This works because all our natural numbers are either the empty list or a list of natural numbers, thanks to our nicely defined *S* function.
 
@@ -102,7 +102,7 @@ But back to our problem: numbers on a simple Lisp machine. We've now got a suita
 
 We also have a way of adding one to a number in *S*. How about adding two natural numbers together?
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define zero?
       (lambda (n)
         (equal? () n)))
@@ -111,7 +111,7 @@ We also have a way of adding one to a number in *S*. How about adding two natura
       (lambda (n m)
         (cond ((zero? m) n)
               (else (S (A n (P m)))))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 That is a nice recursive definition, but we have a mysterious new *P* function now, as well. *P* stands for "predecessor", and it gives us the natural number than *m* is a successor of.
 
@@ -124,7 +124,7 @@ This is also recursive, but it has the unfair advantage of what the Clojurist in
 
 With Lisp, we can check to see is *m* is zero, and if it isn't, we know that it is a successor, we just don't know what it is a successor *of*. That is where *P* comes in.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define R
       (lambda (fn acc l)
          (cond ((null? l) acc)
@@ -134,7 +134,7 @@ With Lisp, we can check to see is *m* is zero, and if it isn't, we know that it 
       (lambda (n)
         (cond ((zero? n) #f) ;; really, undefined
               (else (R union () n)))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 And out of nowhere comes a higher-order function! While set theory may have some expressive advantages over Lisp, we've got some special sauce, too. In this case `(R union () n)` is equivalent to the set theoretical "union over a set" that the [Zermelo-Fraenkel](http://en.wikipedia.org/wiki/Zermelo-Fraenkel_set_theory) Union Axiom gives provides. Most people call *R* "reduce".
 
@@ -142,7 +142,7 @@ You might notice that we get duplicates in our lists, but as I said before, we d
 
 With a proper *P* defined, *A* now works flawlessly. Now let's define *M*, multiplication and *B*, subtraction:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define M
       (lambda (n m)
         (cond ((zero? m) ())
@@ -152,11 +152,11 @@ With a proper *P* defined, *A* now works flawlessly. Now let's define *M*, multi
       (lambda (n m)
         (cond ((zero? m) n)
               (else (P (B n (P m)))))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 It gets easier and easier as we build off of our previous functions, and combine them to yield more complex, more useful abstractions. Finally, let's write our number predicate;
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define length
       (lambda (n)
         (cond ((null? n) ())
@@ -165,7 +165,7 @@ It gets easier and easier as we build off of our previous functions, and combine
     (define number?
       (lambda (n)
         (equal? n (length n))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 And there you have it; we've got the basics of our natural numbers, represented using McCarthy's basic LISP.
 
@@ -179,7 +179,7 @@ In this manner we can represent all the integers. Of course, we'll have to creat
 
 For example, we can define adding two integers like this:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define first
       (lambda (n)
         (car n)))
@@ -196,17 +196,17 @@ For example, we can define adding two integers like this:
       (lambda (x y)
          (makeint (A (first x) (first y))
                   (A (second x) (second y)))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 Something important to keep in mind, however, is that different tuples can represent the same integer. For instance, the integer (2, 5) is the same as the integer (0, 3); they're both what we would have called "3" back in the natural numbers section. In fact, it makes sense to call both of them "3" here. But the second example here is preferable, I'd say. This is something that is dealt with in set theory by [equivalence relations](http://en.wikipedia.org/wiki/Equivalence_relation); we can do the same thing in Lisp. Below I'll define a function which returns the "simplest" version of a given integer; one where either the negative portion is zero, the positive portion is zero, or they are both zero.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.scheme}
+```scheme
     (define simplint
       (lambda (z)
         (cond ((or (zero? (first z)) (zero? (second z))) z)
               (else (makeint (P (first z))
                              (P (second z)))))))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 Subtraction, multiplication and other operations on integers begin to fall into place with these definitions. Things don't get more complicated as you move further away from your base representation (unless you try to formally prove all of my assertions): if anything, they get easier. This is a consequence of appropriate abstraction.
 
