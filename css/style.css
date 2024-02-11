@@ -3,7 +3,8 @@ html {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #333;
+  color: #1C1B1A;
+  background-color: #FFFCF0;
   line-height: 1.6;
   margin: 0;
   padding: 20px;
@@ -155,8 +156,8 @@ section.logos a:hover {
 
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #1a1a2e; 
-    color: #c7c7c7;
+    background-color: #282726;
+    color: #F2F0E5;
   }
 
   a {
@@ -174,7 +175,7 @@ section.logos a:hover {
 
 
   ul#posts li a, ul#posts li span.date {
-    color: #dcdcdc;
+    color: #F2F0E5;
   }
 
   .logo {
