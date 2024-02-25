@@ -1,29 +1,14 @@
 html {
 }
 
-@font-face {
-    src: url('../fonts/FernText-Bold-Testing.woff') format("woff"),
-	 url('../fonts/FernText-Bold-Testing.woff2') format("woff2");
-    font-family: 'Fern';
-    font-style: normal;
-    font-weight: bold;
-}
 
 @font-face {
-    src: url('../fonts/FernText-Regular-Testing.woff') format("woff"),
-	 url('../fonts/FernText-Regular-Testing.woff2') format("woff2");
-    font-family: 'Fern';
-    font-style: normal;
-    font-weight: normal;
+  font-family: 'Warbler';
+  src: url('../fonts/WarblerVariableV1-VF.woff2') format('woff2-variations'),
+       url('../fonts/WarblerVariableV1-VF.woff') format('woff-variations');
+  font-weight: 100 800;
 }
 
-@font-face {
-    src: url('../fonts/FernText-Italic-Testing.woff') format("woff"),
-	 url('../fonts/FernText-Italic-Testing.woff2') format("woff2");
-    font-family: 'Fern';
-    font-style: italic;
-    font-weight: normal;
-}
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -50,7 +35,7 @@ h1, h2, h3, h4, h5, h6, h7 {
 }
 
 ul#posts a, #content h1 {
-    font-family: Fern;
+    font-family: Warbler;
     font-weight: normal;
 }
 
@@ -124,6 +109,12 @@ dt + dd {
     line-height: 1em;
     padding-top: 9px;
 }
+#nav #by {
+    font-size: .7em;
+}
+#nav strong {
+    font-family: Warbler;
+}
 #nav li {
     list-style-type: none;
 }
@@ -152,7 +143,7 @@ span#date {
     font-style: italic;
     margin-top: -17px;
     display: block;
-
+    font-family: Warbler;
     
 }
 
