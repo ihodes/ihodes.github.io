@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Experiment types in product management
+title: Experiment types in product development
 subtitle:
 summary:
 categories: product-management theories
