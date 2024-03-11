@@ -18,9 +18,10 @@ that it's on you. It's not someone else's problem.
 Agency is underpinned by the belief that anything can be done, and
 demonstrated by a set of behaviors that boil down to the
 following. First, identify the problem/goal/desire. Make a plan to
-achieve it (you should probably write it down). Then, do the first
-thing in your plan. Reevaluate the plan based on the outcome of that
-first action. Repeat.
+achieve it (you should probably write it down, and identify a proximal
+goal if the ultimate goal is far out). Then, do the first thing in
+your plan. Evaluate the plan based on the outcome of that first
+action. Repeat.
 
 It is deeply empowering (and at times, overwhelming) to act as though
 everything that’s out there is a problem that you can solve, and if
@@ -45,22 +46,23 @@ might know what to do next.
 
 Just because you feel ownership and have agency doesn’t mean that
 you’re responsible for doing everything by yourself. This is a common
-failure mode of an ownership mindset, and it is certainly failure mode
-of an ownership mindset. You can and should rally other people and
-resources to your cause. You should prioritize and deprioritize. But
-you should never say “it’s someone else’s problem” and fold your
-arms. More than just being ineffective, doing so is disrespectful to
+failure mode of an ownership mindset. But you can and should rally
+other people and resources to your cause. Embrace as part of the
+challenge identifying which are realistic, who you can influence or
+direct, and what you may have to give up. You will prioritize and
+deprioritize. Never say “it’s someone else’s problem” and fold your
+arms. More than being ineffective, doing so is disrespectful to
 yourself. It diminishes your agency and discounts your ability to act
-in the world. 
+in the world.
 
 Finally, there aren’t rules. There are principles and values we will
 abide by while accomplishing our goals. There are structures (like the
-legal system) we act within. Most of what keeps us from our goals are
-self-imposed rules. Don't blame society or others for these rules:
-you're not a victim, you own these decisions. You're an agent, and you
-can act.
+legal system) we choose to act within. Most of what keeps us from our
+goals are self-imposed rules. Don't blame society or others for these
+rules: you're not a victim, you own these decisions. You're an agent,
+and you can act.
 
-The belief you must cleave to is that you can do it, and that you are
-responsible for ensuring it is done. You can prepare and learn
-forever, but only action gets it done.
+You can prepare and learn forever, but only action gets it done. The
+belief you must cleave to is that you can do it, and that you are
+responsible for ensuring it is done.
 
