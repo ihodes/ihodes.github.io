@@ -36,5 +36,7 @@ Finally, there aren’t rules. There are principles and values you will abide by
 
 You can prepare and learn forever, but only action gets it done. The belief you must cleave to is that you can do it, and that you are responsible for ensuring it is done.
 
+<small><em>A special thanks to Mark Ungerer for reviewing this post and providing invaluable feedback.</em></small>
+
 
 [^goal]: Effective goal setting deserves its own post (or book), and shouldn’t be taken for granted. But it’s important to note that ownership and agency with bad goals is *not* effective (though you might call it unusually ineffective). 
