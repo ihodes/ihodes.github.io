@@ -13,7 +13,7 @@ Learning is compounding, and anything positive that compounds is worth exploitin
 
 At the end of the day, you're competing against the next best version of yourself. 1% better every day over 2 1/2 years, and you will be 100x better than the version of yourself that didn't do that.
 
-Working "smarter" gets too much airtime. You should work as smart as you are capable of: that is the expectation. Then work harder. It's much easier to just work harder than it is to just work harder.
+Working "smarter" gets too much airtime. You should work as smart as you are capable of: that is the expectation. Then work harder. It's much easier to just work harder than it is to just work smarter.
 
 You could work too hard, but that wouldn't be smart. Pay attention to what your body and mind need: this is part of working smart. Sleep enough, eat right, take the breaks you need. 
 
