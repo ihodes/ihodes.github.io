@@ -22,11 +22,18 @@ body {
 a {
   color: #2b5d66;
   text-decoration: none;
+  border-bottom: 1.5px dotted rgba(43, 93, 102, 0.5);
 }
 
 a:hover {
-  text-decoration: underline;
   color: #1d4f60;
+  border-bottom-color: rgba(29, 79, 96, 0.8);
+}
+
+/* Exception for logo links */
+.company-logos a,
+section.logos a {
+  border-bottom: none;
 }
 
 h1, h2, h3, h4, h5, h6, h7 {
@@ -232,11 +239,13 @@ img[src*="datavant"] {
 
   a {
     color: #4db8ff;
+    border-bottom-color: rgba(77, 184, 255, 0.5);
   }
 
   a:hover {
     color: #66ccff;
-    text-decoration: underline;
+    text-decoration: none;
+    border-bottom-color: rgba(102, 204, 255, 0.8);
   }
 
   h1, h2, h3, h4, h5, h6, h7 {
@@ -350,4 +359,3 @@ img[src*="datavant"] {
     height: 28px;
   }
 }
-
