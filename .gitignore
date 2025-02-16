@@ -2,3 +2,5 @@ dist/
 poetry.lock
 __pycache__
 .DS_STORE
+venv/
+venv/*
