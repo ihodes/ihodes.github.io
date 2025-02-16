@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Bottlenecks are misunderstand and underappreciated
+title: Only one bottleneck matters
 subtitle:
 summary:
 categories: business
