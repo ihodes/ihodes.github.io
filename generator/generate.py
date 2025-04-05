@@ -14,6 +14,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 DEST_ROOT_PATH = "./dist/"
 POST_PATH = "p"
 ABOUT_PATH = "about"
+RECIPES_PATH = "recipes"
 SHELF_PATH = "shelf"
 CSS_PATH = "css"
 JS_PATH = "js"
@@ -29,6 +30,7 @@ TEMPLATES = {
     'post': ENV.get_template('post.html'),
     'index': ENV.get_template('index.html'),
     'about': ENV.get_template('about.html'),
+    'recipes': ENV.get_template('recipes.html'),
     'shelf': ENV.get_template('shelf.html'),
 }
 
@@ -55,10 +57,16 @@ def markdown_post(post_path):
 def process_post(post_path):
     post = markdown_post(post_path)
     title = post.metadata['title']
+
+    publish = True
+    publish_val = post.metadata.get('publish')
+    if publish_val is not None:
+        publish = False if publish_val.lower().strip() == 'false' else True
     slug = sluggify(title)
     d = datetime.strptime(post.metadata['date'], '%Y-%m-%d')
     post_data = {
         'title': title,
+        'publish': publish,
         'url': os.path.join(POST_PATH, slug),
         'date': post.metadata['date'],
         'formatted_date': d.strftime('%B %d, %Y'),
@@ -68,9 +76,13 @@ def process_post(post_path):
     return post_data
 
 
-def get_posts(posts_dir="./posts/"):
+def get_posts(posts_dir="./posts/", include_unpublished=False):
     """Return all processed posts in the directory."""
-    return [process_post(p) for p in glob.glob(posts_dir + '*.md')]
+    posts = [process_post(p) for p in glob.glob(posts_dir + '*.md')]
+    if include_unpublished:
+        return posts
+    else:
+        return [p for p in posts if p['publish']]
 
     
 def format_post(post, template=TEMPLATES['post']):
@@ -94,6 +106,10 @@ def format_index(template=TEMPLATES['index']):
 
 
 def format_about(template=TEMPLATES['about']):
+    html_text = template.render()
+    return html_text
+
+def format_recipes(template=TEMPLATES['recipes']):
     html_text = template.render()
     return html_text
 
@@ -127,6 +143,15 @@ def write_about():
         f.write(about_html)
 
 
+def write_recipes():
+    print("writing recipes page")
+    recipes_html = format_recipes()
+    recipes_path = os.path.join(DEST_ROOT_PATH, RECIPES_PATH)
+    pathlib.Path(recipes_path).mkdir(parents=True, exist_ok=True)
+    with open(os.path.join(recipes_path, 'index.html'), 'w') as f:
+        f.write(recipes_html)
+
+
 def write_shelf():
     print("writing shelf page")
     shelf_html = format_shelf()
@@ -140,8 +165,12 @@ def write_posts():
     dest_post_path = os.path.join(DEST_ROOT_PATH, POST_PATH)
     pathlib.Path(dest_post_path).mkdir(parents=True, exist_ok=True)
     print("---writing posts---")
-    posts = get_posts()
+    posts = get_posts(include_unpublished=True)
     for post in posts:
+        if post['publish'] == False:
+            print(f"skipping post '{post['title']}'")
+            continue
+
         print("writing ", post['title'])
         html = format_post(post)
         post_title_slug = sluggify(post['title'])
@@ -169,6 +198,7 @@ def write_website(base_url):
     pathlib.Path(DEST_ROOT_PATH).mkdir(parents=True, exist_ok=True)
     write_index()
     write_about()
+    write_recipes()
     write_shelf()
     write_posts()
     write_assets()
