@@ -9,8 +9,6 @@ import markdown2
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-
-
 DEST_ROOT_PATH = "./dist/"
 POST_PATH = "p"
 ABOUT_PATH = "about"
@@ -33,7 +31,6 @@ TEMPLATES = {
     'recipes': ENV.get_template('recipes.html'),
     'shelf': ENV.get_template('shelf.html'),
 }
-
 
 md_extras = ["footnotes", "fenced-code-blocks", "header-ids", "strike", "metadata"]
 M = markdown2.Markdown(extras=md_extras)
@@ -86,9 +83,7 @@ def get_posts(posts_dir="./posts/", include_unpublished=False):
 
     
 def format_post(post, template=TEMPLATES['post']):
-    """Given a path to a Markdown post with appropriate metadata, and the path to a template
-    format the post appropriately and return the formatted HTML.
-    """
+    """Format the post appropriately and return the formatted HTML."""
     md_html = post['html']
     html_text = template.render(text=md_html,
                                 title=post['title'],
@@ -99,25 +94,21 @@ def format_post(post, template=TEMPLATES['post']):
 
 def format_index(template=TEMPLATES['index']):
     posts = get_posts()
-    # sort in reverse-chronological order
     posts = sorted(posts, key=lambda p: datetime.strptime(p['date'], '%Y-%m-%d'), reverse=True)
     html_text = template.render(posts=posts)
     return html_text
 
 
-def format_about(template=TEMPLATES['about']):
-    html_text = template.render()
-    return html_text
-
-def format_recipes(template=TEMPLATES['recipes']):
-    html_text = template.render()
-    return html_text
+def format_static_page(template, **context):
+    return template.render(**context)
 
 
-def format_shelf(template=TEMPLATES['shelf']):
-    html_text = template.render()
-    return html_text
-
+def write_static_page(template, filename):
+    html_text = format_static_page(template)
+    path = os.path.join(DEST_ROOT_PATH, filename)
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    with open(os.path.join(path, 'index.html'), 'w') as f:
+        f.write(html_text)
 
 
 ############################################
@@ -134,31 +125,20 @@ def write_index():
     with open(os.path.join(DEST_ROOT_PATH, 'index.html'), 'w') as f:
         f.write(index_html)
 
+
 def write_about():
     print("writing about page")
-    about_html = format_about()
-    about_path = os.path.join(DEST_ROOT_PATH, ABOUT_PATH)
-    pathlib.Path(about_path).mkdir(parents=True, exist_ok=True)
-    with open(os.path.join(about_path, 'index.html'), 'w') as f:
-        f.write(about_html)
+    write_static_page(TEMPLATES['about'], ABOUT_PATH)
 
 
 def write_recipes():
     print("writing recipes page")
-    recipes_html = format_recipes()
-    recipes_path = os.path.join(DEST_ROOT_PATH, RECIPES_PATH)
-    pathlib.Path(recipes_path).mkdir(parents=True, exist_ok=True)
-    with open(os.path.join(recipes_path, 'index.html'), 'w') as f:
-        f.write(recipes_html)
+    write_static_page(TEMPLATES['recipes'], RECIPES_PATH)
 
 
 def write_shelf():
     print("writing shelf page")
-    shelf_html = format_shelf()
-    shelf_path = os.path.join(DEST_ROOT_PATH, SHELF_PATH)
-    pathlib.Path(shelf_path).mkdir(parents=True, exist_ok=True)
-    with open(os.path.join(shelf_path, 'index.html'), 'w') as f:
-        f.write(shelf_html)
+    write_static_page(TEMPLATES['shelf'], SHELF_PATH)
 
 
 def write_posts():
@@ -203,5 +183,3 @@ def write_website(base_url):
     write_posts()
     write_assets()
     print('___completed___')
-    
-
