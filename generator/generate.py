@@ -11,9 +11,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 DEST_ROOT_PATH = "./dist/"
 POST_PATH = "p"
-ABOUT_PATH = "about"
-RECIPES_PATH = "recipes"
-SHELF_PATH = "shelf"
 CSS_PATH = "css"
 JS_PATH = "js"
 IMAGES_PATH = "images"
@@ -24,12 +21,15 @@ ENV = Environment(
     autoescape=select_autoescape()
 )
 
+PAGES = {
+    'about': (ENV.get_template('about.html'), "about"),
+    'shelf': (ENV.get_template('shelf.html'), "shelf"),
+    'recipes': (ENV.get_template('recipes.html'), "recipes")
+}
+
 TEMPLATES = {
-    'post': ENV.get_template('post.html'),
     'index': ENV.get_template('index.html'),
-    'about': ENV.get_template('about.html'),
-    'recipes': ENV.get_template('recipes.html'),
-    'shelf': ENV.get_template('shelf.html'),
+    'post': ENV.get_template('post.html'),
 }
 
 md_extras = ["footnotes", "fenced-code-blocks", "header-ids", "strike", "metadata"]
@@ -81,7 +81,7 @@ def get_posts(posts_dir="./posts/", include_unpublished=False):
     else:
         return [p for p in posts if p['publish']]
 
-    
+
 def format_post(post, template=TEMPLATES['post']):
     """Format the post appropriately and return the formatted HTML."""
     md_html = post['html']
@@ -99,20 +99,18 @@ def format_index(template=TEMPLATES['index']):
     return html_text
 
 
-def format_static_page(template, **context):
-    return template.render(**context)
-
-
-def write_static_page(template, filename):
-    html_text = format_static_page(template)
-    path = os.path.join(DEST_ROOT_PATH, filename)
+def write_static_page(page_name):
+    template, path = PAGES[page_name]
+    html_text = template.render()
+    path = os.path.join(DEST_ROOT_PATH, path)
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     with open(os.path.join(path, 'index.html'), 'w') as f:
         f.write(html_text)
 
 
+
 ############################################
-#   Writing to output directory (./dist)   #
+#   Writing output to DEST_ROOT_PATH       #
 ############################################
 
 def clean_dest():
@@ -126,19 +124,10 @@ def write_index():
         f.write(index_html)
 
 
-def write_about():
-    print("writing about page")
-    write_static_page(TEMPLATES['about'], ABOUT_PATH)
-
-
-def write_recipes():
-    print("writing recipes page")
-    write_static_page(TEMPLATES['recipes'], RECIPES_PATH)
-
-
-def write_shelf():
-    print("writing shelf page")
-    write_static_page(TEMPLATES['shelf'], SHELF_PATH)
+def write_all_pages():
+    for page_name in PAGES:
+        print("writing {} page".format(page_name))
+        write_static_page(page_name)
 
 
 def write_posts():
@@ -177,9 +166,7 @@ def write_website(base_url):
     print('___starting website generation___')
     pathlib.Path(DEST_ROOT_PATH).mkdir(parents=True, exist_ok=True)
     write_index()
-    write_about()
-    write_recipes()
-    write_shelf()
+    write_all_pages()
     write_posts()
     write_assets()
     print('___completed___')
