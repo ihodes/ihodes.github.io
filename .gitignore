@@ -5,3 +5,4 @@ __pycache__
 venv/
 venv/*
 /jedi.json
+/.emigo_repomap/
