@@ -152,6 +152,15 @@ def write_posts():
     print("---done with posts---")
 
 
+def write_sitemap(base_url):
+    print("writing sitemap")
+    template = ENV.get_template('sitemap.xml')
+    sitemap = template.render(base_url=base_url, posts=get_posts())
+
+    with open(os.path.join(DEST_ROOT_PATH, 'sitemap.xml'), 'w') as f:
+        f.write(sitemap)
+
+
 def write_rss(base_url):
     print("writing RSS feed")
     fg = FeedGenerator()
@@ -202,5 +211,6 @@ def write_website(base_url):
     write_all_pages()
     write_posts()
     write_rss(base_url)
+    write_sitemap(base_url)
     write_assets()
     print('___completed___')
