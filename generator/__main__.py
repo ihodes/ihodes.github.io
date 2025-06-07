@@ -19,7 +19,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 parser = argparse.ArgumentParser(prog='notes', description='generate blog')
-parser.add_argument('url', nargs='?', default=os.getcwd())
+parser.add_argument('url', nargs='?', default='https://isaachodes.io')
 parser.add_argument('-s', '--serve', action='store_true')
 parser.add_argument('-c', '--clean', action='store_true')
 parser.add_argument('-p', '--port')
@@ -27,16 +27,23 @@ parser.add_argument('-p', '--port')
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    
+
+    # Use localhost URL when serving locally
+    if args.serve:
+        port = int(args.port) if args.port else PORT
+        base_url = f'http://localhost:{port}'
+    else:
+        base_url = args.url
+
     if args.clean:
         g.clean_dest()
     else:
-        g.write_website(args.url)
+        g.write_website(base_url)
 
     if args.serve:
         class Event(LoggingEventHandler):
             def dispatch(self, event):
-                g.write_website(args.url)
+                g.write_website(base_url)
 
         event_handler = Event()
         observers = []
@@ -45,10 +52,8 @@ if __name__ == '__main__':
             observer.schedule(event_handler, d, recursive=True)
             observer.start()
             observers.append(observer)
-        
+
         port = int(args.port) if args.port else PORT
         with socketserver.TCPServer(("", port), Handler) as httpd:
             print("serving at port", port)
             httpd.serve_forever()
-
-    

@@ -3,11 +3,13 @@ import os
 import re
 import shutil
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
+from urllib.parse import urljoin
 
 import markdown2
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from feedgen.feed import FeedGenerator
 
 DEST_ROOT_PATH = "./dist/"
 POST_PATH = "p"
@@ -150,6 +152,37 @@ def write_posts():
     print("---done with posts---")
 
 
+def write_rss(base_url):
+    print("writing RSS feed")
+    fg = FeedGenerator()
+    fg.title('Notes by Isaac')
+    fg.author({'name': 'Isaac Hodes', 'email': 'isaachodes@gmail.com'})
+    fg.link(href=base_url, rel='alternate')
+    fg.link(href=f'{base_url}/rss.xml', rel='self')
+    fg.language('en')
+    fg.description('Notes by Isaac')
+    fg.logo(f'{base_url}/images/favicons/android-chrome-192x192.png')
+
+    posts = sorted(get_posts(), key=lambda p: datetime.strptime(p['date'], '%Y-%m-%d'), reverse=True)
+    for post in posts:
+        fe = fg.add_entry()
+        fe.title(post['title'])
+        fe.link(href=f"{base_url}/{post['url']}/")
+        fe.published(datetime.strptime(post['date'], '%Y-%m-%d').replace(tzinfo=timezone.utc))
+
+        # Convert relative URLs to absolute URLs in content, required in RSS 2.0 spec
+        html_content = post['html']
+        html_content = re.sub(r'(src|href)="(/[^"]*)"',
+                             lambda m: f'{m.group(1)}="{urljoin(base_url, m.group(2))}"',
+                             html_content)
+
+        fe.content(html_content, type='html')
+        if 'summary' in post['metadata']:
+            fe.description(post['metadata']['summary'])
+
+    fg.rss_file(os.path.join(DEST_ROOT_PATH, 'rss.xml'))
+
+
 def write_assets():
     print('copying images to {}'.format(DEST_ROOT_PATH))
     shutil.copytree(IMAGES_PATH, os.path.join(DEST_ROOT_PATH, IMAGES_PATH))
@@ -168,5 +201,6 @@ def write_website(base_url):
     write_index()
     write_all_pages()
     write_posts()
+    write_rss(base_url)
     write_assets()
     print('___completed___')
