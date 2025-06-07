@@ -1,18 +1,13 @@
-[tool.poetry]
-name = "generator"
-version = "0.0.1"
-description = "Isaac's blog."
-authors = ["ihodes <isaachodes@gmail.com>"]
+[project]
+name = "ihodes-github-io"
+version = "0.1.0"
+description = "Isaac's personal blog, including generator"
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = ">=3.10,<4"
-markdown2 = "^2.4.12"
-pygments = "^2.17.2"
-jinja2 = "^3.1.2"
-watchdog = "^3.0.0"
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires-python = ">=3.12"
+dependencies = [
+             'markdown2>=2.4.12',
+             'pygments>=2.17.2',
+             'jinja2>=3.1.2',
+             'watchdog>=3.0.0',
+             'feedgen>=1.0.0'
+]
