@@ -26,7 +26,8 @@ ENV = Environment(
 PAGES = {
     'about': (ENV.get_template('about.html'), "about"),
     'shelf': (ENV.get_template('shelf.html'), "shelf"),
-    'recipes': (ENV.get_template('recipes.html'), "recipes")
+    'recipes': (ENV.get_template('recipes.html'), "recipes"),
+    'nec': (ENV.get_template('nec.html'), "nec")
 }
 
 TEMPLATES = {
