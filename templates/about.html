@@ -3,6 +3,21 @@
 
 {% block title %}About{% endblock %}
 
+{% block head %}
+    {{ super() }}
+    <meta property="og:title" content="About Isaac Hodes" />
+    <meta property="og:description" content="Builder with 15 years at the intersection of technology, healthcare, and data. Founder, product leader, software engineer." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://isaachodes.io/about" />
+    <meta property="og:site_name" content="Notes by Isaac" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="About Isaac Hodes" />
+    <meta name="twitter:description" content="Builder with 15 years at the intersection of technology, healthcare, and data. Founder, product leader, software engineer." />
+
+    <meta name="description" content="Builder with 15 years at the intersection of technology, healthcare, and data. Founder, product leader, software engineer." />
+{% endblock %}
+
 {% block content %}
 <h1>What I'm about, and what I do</h1>
 
@@ -53,6 +68,3 @@
 
 
 {% endblock %}
-
-
-

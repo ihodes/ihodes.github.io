@@ -6,7 +6,7 @@
 {% block head %}
     {{ super() }}
     <meta property="og:title" content="{{ title }}" />
-    <meta property="og:description" content="{{ text | striptags | truncate(200) }}" />
+    <meta property="og:description" content="{% if summary %}{{ summary }}{% else %}{{ text | striptags | truncate(200) }}{% endif %}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="{{ url }}" />
     {% if image_url %}
@@ -18,7 +18,7 @@
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="{{ title }}" />
-    <meta name="twitter:description" content="{{ text | striptags | truncate(200) }}" />
+    <meta name="twitter:description" content="{% if summary %}{{ summary }}{% else %}{{ text | striptags | truncate(200) }}{% endif %}" />
     {% if image_url %}
     <meta name="twitter:image" content="{{ image_url }}" />
     {% endif %}

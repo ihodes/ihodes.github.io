@@ -3,6 +3,21 @@
 
 {% block title %}Notes by Isaac{% endblock %}
 
+{% block head %}
+{{ super() }}
+<meta property="og:title" content="Notes by Isaac" />
+<meta property="og:description" content="Writing on science, technology, product development, and complex systems." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://isaachodes.io/" />
+<meta property="og:site_name" content="Notes by Isaac" />
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Notes by Isaac" />
+<meta name="twitter:description" content="Writing on science, technology, product development, and complex systems." />
+
+<meta name="description" content="Writing on science, technology, product development, and complex systems." />
+{% endblock %}
+
 {% block content %}
 <h1>Notes</h1>
 

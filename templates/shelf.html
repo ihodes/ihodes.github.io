@@ -1,7 +1,22 @@
 {% extends "base.html" %}
 
 
-{% block title %}Notes{% endblock %}
+{% block title %}Shelf{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <meta property="og:title" content="Shelf" />
+    <meta property="og:description" content="A collection of books, music, essays, and inspiring people's work that I've enjoyed." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://isaachodes.io/shelf" />
+    <meta property="og:site_name" content="Notes by Isaac" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Shelf" />
+    <meta name="twitter:description" content="A collection of books, music, essays, and inspiring people's work that I've really enjoyed." />
+
+    <meta name="description" content="A collection of books, music, essays, and inspiring people's work that I've enjoyed." />
+{% endblock %}
 
 {% block content %}
 <h1>A collection of good things</h1>
@@ -39,7 +54,7 @@
     <span>In Rainbows</span>
   </dt>
   <dd>Radiohead</dd>
-  
+
   <dt>
     <img src="/images/shelf/7-powers.jpg" alt="Book Cover">
     <span>7 Powers</span>
@@ -165,6 +180,3 @@
 </ul>
 
 {% endblock %}
-
-
-
