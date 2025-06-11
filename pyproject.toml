@@ -5,9 +5,10 @@ description = "Isaac's personal blog, including generator"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-             'markdown2>=2.4.12',
+             'markdown2>=2.5.3',
              'pygments>=2.17.2',
              'jinja2>=3.1.2',
              'watchdog>=3.0.0',
-             'feedgen>=1.0.0'
+             'feedgen>=1.0.0',
+             "latex2mathml>=3.78.0",
 ]

@@ -36,7 +36,7 @@ TEMPLATES = {
     'post': ENV.get_template('post.html'),
 }
 
-md_extras = ["footnotes", "fenced-code-blocks", "header-ids", "strike", "metadata"]
+md_extras = ["footnotes", "fenced-code-blocks", "header-ids", "strike", "metadata", "latex"]
 M = markdown2.Markdown(extras=md_extras)
 
 

@@ -19,6 +19,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "feedgen" },
     { name = "jinja2" },
+    { name = "latex2mathml" },
     { name = "markdown2" },
     { name = "pygments" },
     { name = "watchdog" },
@@ -28,7 +29,8 @@ dependencies = [
 requires-dist = [
     { name = "feedgen", specifier = ">=1.0.0" },
     { name = "jinja2", specifier = ">=3.1.2" },
-    { name = "markdown2", specifier = ">=2.4.12" },
+    { name = "latex2mathml", specifier = ">=3.78.0" },
+    { name = "markdown2", specifier = ">=2.5.3" },
     { name = "pygments", specifier = ">=2.17.2" },
     { name = "watchdog", specifier = ">=3.0.0" },
 ]
@@ -43,6 +45,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d", size = 245115, upload-time = "2025-03-05T20:05:02.478Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67", size = 134899, upload-time = "2025-03-05T20:05:00.369Z" },
+]
+
+[[package]]
+name = "latex2mathml"
+version = "3.78.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/69/33/ad2c3929494ad160f5130ea132ca298627a6c81c70be6bedd1bc806b5b01/latex2mathml-3.78.0.tar.gz", hash = "sha256:712193aa4c6ade1a8e0145dac7bc1f9aafbd54f93046a2356a7e1c05fa0f8b31", size = 73737, upload-time = "2025-05-03T16:51:53.563Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/fd/aba08bb9e527168efad57985d7db9a853eb2384b1efa5ca5f3a3794c9cef/latex2mathml-3.78.0-py3-none-any.whl", hash = "sha256:1aeca3dc027b3006ad7b301b7f4a15ffbb4c1451e3dc8c3389e97b37b497e1d6", size = 73673, upload-time = "2025-05-03T16:51:51.991Z" },
 ]
 
 [[package]]
