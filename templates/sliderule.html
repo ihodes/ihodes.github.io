@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide Rule</title>
+    <style>
+        body {
+            font-family: Georgia, serif;
+            background-color: #f5f2e8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Slide Rule Library Styles */
+        #sr-body {
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        /* Components */
+        #sr-upper-stator {
+            background-color: #e8dcc0;
+            border: 2px solid #a0896d;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+        }
+
+        #sr-slide {
+            position: relative;
+            cursor: grab;
+            background-color: #fdfaf0;
+            border-left: 2px solid #a0896d;
+            border-right: 2px solid #a0896d;
+            z-index: 10;
+        }
+
+        #sr-slide:active {
+            cursor: grabbing;
+        }
+
+        #sr-lower-stator {
+            background-color: #e8dcc0;
+            border: 2px solid #a0896d;
+            border-radius: 0 0 4px 4px;
+            position: relative;
+        }
+
+        /* Canvas elements */
+        #sr-body canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            shape-rendering: crispEdges;
+            image-rendering: crisp-edges;
+        }
+
+        /* Scale labels */
+        .sr-scale-label {
+            position: absolute;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: "Times New Roman", Times, serif;
+            color: #5a4a3a;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            left: 35px; /* Position after secondary label */
+        }
+
+        .sr-scale-label-top {
+            top: 5px;
+        }
+
+        .sr-scale-label-bottom {
+            bottom: 5px;
+        }
+
+        /* Secondary labels */
+        .sr-secondary-label {
+            font-size: 14px;
+            opacity: 0.8;
+            left: 5px; /* Position on the left side */
+        }
+
+        /* Cursor */
+        #sr-cursor {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            cursor: ew-resize;
+            z-index: 20;
+            background: linear-gradient(to right, 
+                rgba(255, 255, 255, 0.1) 0%,
+                rgba(255, 255, 255, 0.3) 10%,
+                rgba(255, 255, 255, 0.4) 45%,
+                rgba(255, 255, 255, 0.4) 55%,
+                rgba(255, 255, 255, 0.3) 90%,
+                rgba(255, 255, 255, 0.1) 100%);
+            border-left: 1px solid rgba(200, 200, 200, 0.5);
+            border-right: 1px solid rgba(200, 200, 200, 0.5);
+            box-shadow: 
+                inset 0 0 10px rgba(255, 255, 255, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Hairline */
+        #sr-cursor::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #cc0000;
+            transform: translateX(-0.5px);
+            box-shadow: 0 0 1px rgba(204, 0, 0, 0.5);
+        }
+
+        /* Developer mode values */
+        #sr-cursor-values {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid #999;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-family: monospace;
+            white-space: nowrap;
+            margin-bottom: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+
+        .sr-dev-mode #sr-cursor-values {
+            display: block;
+        }
+
+        #sr-cursor-values .sr-scale-value {
+            display: block;
+            margin: 2px 0;
+        }
+
+        #sr-cursor-values .sr-scale-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Animation for slide reset */
+        #sr-slide.resetting {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* UI Controls */
+        #dev-toggle, #reset-button {
+            position: fixed;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #999;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 100;
+        }
+
+        #dev-toggle {
+            top: 10px;
+        }
+
+        #reset-button {
+            top: 40px;
+        }
+
+        body.dev-mode #reset-button {
+            display: block;
+        }
+
+        #dev-toggle:hover, #reset-button:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div id="slide-rule-container"></div>
+    <button id="dev-toggle">Dev Mode</button>
+    <button id="reset-button">Reset</button>
+    
+    <script>
+        /**
+         * Slide Rule Scales Library
+         * Mathematical scale definitions and rendering
+         */
+
+        // -------------------------------------------
+        // SCALE DIVISIONS: Canonical registry
+        // -------------------------------------------
+        const ScaleDivisions = {
+            // 0.5 spacing
+            seconds:        { divisor: 2,   defaultHeight: 12, defaultWidth: 0.5,  minPixelSpacing: 15  },
+            // 0.2 spacing
+            fifths:         { divisor: 5,   defaultHeight: 8,  defaultWidth: 0.5,  minPixelSpacing: 8   },
+            // 0.1 spacing
+            tenths:         { divisor: 10,  defaultHeight: 10, defaultWidth: 0.5,  minPixelSpacing: 5   },
+            // 0.05 spacing
+            twentieths:     { divisor: 20,  defaultHeight: 7,  defaultWidth: 0.5,  minPixelSpacing: 3   },
+            // 0.02 spacing
+            fiftieths:      { divisor: 50,  defaultHeight: 6,  defaultWidth: 0.5,  minPixelSpacing: 2   },
+            // 0.01 spacing
+            hundredths:     { divisor: 100, defaultHeight: 4,  defaultWidth: 0.5,  minPixelSpacing: 1.5 },
+            // 0.005 spacing
+            twoHundredths:  { divisor: 200, defaultHeight: 3,  defaultWidth: 0.5, minPixelSpacing: 1   },
+            // 0.002 spacing
+            fiveHundredths: { divisor: 500, defaultHeight: 3,  defaultWidth: 0.5,  minPixelSpacing: 0.8 }
+        };
+
+        // -------------------------------------------
+        // DIVISION RULES: Define tick patterns for different scale ranges
+        // -------------------------------------------
+        const DivisionRuleSets = {
+            // Standard single-decade logarithmic scale divisions
+            singleDecadeLog: [
+                { range: [1, 1.5], divisions: ['seconds', 'tenths', 'twentieths', 'hundredths'] },
+                { range: [1.5, 2], divisions: ['seconds', 'tenths', 'twentieths', 'hundredths'] },
+                { range: [2, 3], divisions: ['seconds', 'tenths', 'fiftieths'] },
+                { range: [3, 4], divisions: ['seconds', 'tenths', 'fiftieths'] },
+                { range: [4, 5], divisions: ['seconds', 'tenths', 'twentieths'] },
+                { range: [5, 6], divisions: ['seconds', 'tenths', 'twentieths'] },
+                { range: [6, 7], divisions: ['seconds', 'tenths', 'twentieths'] },
+                { range: [7, 8], divisions: ['seconds', 'tenths', 'twentieths'] },
+                { range: [8, 9], divisions: ['seconds', 'tenths'] },
+                { range: [9, 10], divisions: ['seconds', 'tenths'] }
+            ],
+            // Two-decade logarithmic scale divisions (1-100)
+            twoDecadeLog: [
+                // First decade (1-10)
+                { range: [1, 1.5], divisions: ['seconds', 'tenths', 'twentieths', 'hundredths'] },
+                { range: [1.5, 2], divisions: ['seconds', 'tenths', 'twentieths', 'hundredths'] },
+                { range: [2, 3], divisions: ['seconds', 'tenths', 'fiftieths'] },
+                { range: [3, 4], divisions: ['seconds', 'tenths', 'fiftieths'] },
+                { range: [4, 5], divisions: ['seconds', 'tenths', 'twentieths'] },
+                { range: [5, 6], divisions: ['seconds', 'tenths', 'twentieths'] },
+                { range: [6, 7], divisions: ['seconds', 'tenths'] },
+                { range: [7, 8], divisions: ['seconds', 'tenths'] },
+                { range: [8, 9], divisions: ['seconds'] },
+                { range: [9, 10], divisions: ['seconds'] },
+                // Second decade (10-100) - less detail
+                { range: [10, 15], divisions: ['tenths'] },
+                { range: [15, 20], divisions: ['tenths'] },
+                { range: [20, 30], divisions: ['seconds'] },
+                { range: [30, 40], divisions: ['seconds'] },
+                { range: [40, 50], divisions: ['seconds'] },
+                { range: [50, 60], divisions: ['seconds'] },
+                { range: [60, 70], divisions: ['seconds'] },
+                { range: [70, 80], divisions: ['seconds'] },
+                { range: [80, 90], divisions: ['seconds'] },
+                { range: [90, 100], divisions: ['seconds'] }
+            ]
+        };
+
+        // Special mathematical constants
+        const MathConstants = {
+            'pi': Math.PI,
+            'π': Math.PI,
+            'e': Math.E,
+            'phi': (1 + Math.sqrt(5)) / 2,
+            'φ': (1 + Math.sqrt(5)) / 2,
+            'sqrt2': Math.sqrt(2),
+            '√2': Math.sqrt(2),
+            'sqrt3': Math.sqrt(3),
+            '√3': Math.sqrt(3)
+        };
+
+        // -------------------------------------------
+        // SCALE CLASS: Pure mathematical representation
+        // -------------------------------------------
+        class Scale {
+            constructor(options) {
+                this.type = options.type || 'logarithmic'; // 'logarithmic' or 'linear'
+                this.leftIndex = options.leftIndex || 1;
+                this.rightIndex = options.rightIndex || 10;
+            }
+
+            // Convert value to normalized position (0-1)
+            valueToNormalizedPosition(value) {
+                if (this.type === 'logarithmic') {
+                    const logRange = Math.log10(this.rightIndex / this.leftIndex);
+                    return Math.log10(value / this.leftIndex) / logRange;
+                } else if (this.type === 'linear') {
+                    return (value - this.leftIndex) / (this.rightIndex - this.leftIndex);
+                } else {
+                    console.error("Scale type '", this.type, "' is not supported.")
+                }
+            }
+        }
+
+        // -------------------------------------------
+        // SCALE RENDERER: Handles all visual representation
+        // -------------------------------------------
+        class ScaleRenderer {
+            constructor(ctx, pixelWidth, pixelHeight, bufferSpace, options = {}) {
+                this.ctx = ctx;
+                this.pixelWidth = pixelWidth;
+                this.pixelHeight = pixelHeight;
+                this.bufferSpace = bufferSpace;
+                this.effectiveWidth = pixelWidth - 2 * bufferSpace;
+
+                // Rendering options
+                this.name = options.name || 'Scale';
+                this.secondaryLabel = options.secondaryLabel || null;
+                this.slot = options.slot || 0;
+                this.orientation = options.orientation || 'bottom';
+                this.marks = options.marks || 'auto';
+                this.specialMarks = options.specialMarks || [];
+                this.divisionRules = options.divisionRules || DivisionRuleSets.singleDecadeLog;
+                this.reversed = options.reversed || false;
+                this.slotHeight = options.slotHeight || 40;
+            }
+
+            // Convert normalized position to pixel position
+            normalizedToPixel(normalizedPos) {
+                const effectivePos = this.reversed ? (1 - normalizedPos) : normalizedPos;
+                return this.bufferSpace + effectivePos * this.effectiveWidth;
+            }
+
+            // Render a complete scale
+            render(scale, clearCanvas = true) {
+                if (clearCanvas) {
+                    this.ctx.clearRect(-1, -1, this.pixelWidth + 2, this.pixelHeight + 2);
+                }
+
+                this.ctx.save();
+                const slotY = this.slot * this.slotHeight;
+                this.ctx.translate(0, slotY);
+
+                this.ctx.strokeStyle = '#3a2a1a';
+                this.ctx.fillStyle = '#3a2a1a';
+                this.ctx.font = '12px "Times New Roman", Times, serif';
+
+                const growFromBottom = this.orientation === 'bottom';
+                const scaleY = growFromBottom ? this.slotHeight : 0;
+
+                // Draw scale border
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, scaleY);
+                this.ctx.lineTo(this.pixelWidth, scaleY);
+                this.ctx.stroke();
+
+                // Draw all elements
+                this.renderTicks(scale, growFromBottom);
+                this.renderMarks(scale, growFromBottom);
+                this.renderSpecialMarks(scale, growFromBottom);
+
+                this.ctx.restore();
+            }
+
+            renderTicks(scale, growFromBottom) {
+                const drawnPositions = new Set();
+
+                this.divisionRules.forEach(rule => {
+                    const [rangeStart, rangeEnd] = rule.range;
+                    const divisions = selectDivisions(this.divisionRules, rule.range);
+
+                    divisions.forEach(division => {
+                        const rangeWidth = rangeEnd - rangeStart;
+                        
+                        let numSteps;
+                        if (rangeStart >= 10 && division.name === 'tenths') {
+                            numSteps = rangeWidth;
+                        } else if (rangeStart >= 10 && division.name === 'seconds') {
+                            numSteps = rangeWidth / 5;
+                        } else {
+                            numSteps = Math.floor(rangeWidth * division.divisor);
+                        }
+                        
+                        const step = rangeWidth / numSteps;
+
+                        for (let i = 0; i <= numSteps; i++) {
+                            const value = rangeStart + i * step;
+                            if (value > scale.rightIndex || value < scale.leftIndex) continue;
+
+                            // Skip marks and special marks
+                            const marks = this.generateMarks(scale);
+                            const isMark = marks.some(mark => Math.abs(mark.value - value) < 0.001);
+                            const isSpecial = this.specialMarks.some(mark => Math.abs(mark.value - value) < 0.001);
+                            if (isMark || isSpecial) continue;
+
+                            const normalizedPos = scale.valueToNormalizedPosition(value);
+                            const x = Math.round(this.normalizedToPixel(normalizedPos));
+
+                            const posKey = `${x}-${division.name}`;
+                            if (drawnPositions.has(posKey)) continue;
+                            drawnPositions.add(posKey);
+
+                            this.drawTick(x, division.defaultHeight, division.defaultWidth, growFromBottom);
+                        }
+                    });
+                });
+            }
+
+            generateMarks(scale) {
+                if (this.marks === 'auto') {
+                    const marks = [];
+                    if (scale.type === 'logarithmic') {
+                        if (scale.rightIndex / scale.leftIndex === 10) {
+                            // Single decade
+                            const standardMarks = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10];
+                            standardMarks.forEach(val => {
+                                if (val >= scale.leftIndex && val <= scale.rightIndex) {
+                                    marks.push({ value: val, text: String(val) });
+                                }
+                            });
+                        } else {
+                            // Multi-decade
+                            let decade = Math.floor(Math.log10(scale.leftIndex));
+                            const endDecade = Math.ceil(Math.log10(scale.rightIndex));
+
+                            while (decade <= endDecade) {
+                                const base = Math.pow(10, decade);
+                                [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(mult => {
+                                    const val = base * mult;
+                                    if (val >= scale.leftIndex && val <= scale.rightIndex) {
+                                        marks.push({ value: val, text: String(val) });
+                                    }
+                                });
+                                decade++;
+                            }
+                        }
+                    } else {
+                        // Linear scale
+                        const step = (scale.rightIndex - scale.leftIndex) / 10;
+                        for (let i = 0; i <= 10; i++) {
+                            const val = scale.leftIndex + i * step;
+                            marks.push({ value: val, text: String(val) });
+                        }
+                    }
+                    return marks;
+                } else if (Array.isArray(this.marks)) {
+                    return this.marks.map(val => {
+                        let text = String(val);
+                        if (typeof val === 'string' && MathConstants[val] !== undefined) {
+                            return { value: MathConstants[val], text: val };
+                        }
+                        return { value: val, text: text };
+                    });
+                } else {
+                    return [];
+                }
+            }
+
+            renderMarks(scale, growFromBottom) {
+                const marks = this.generateMarks(scale);
+
+                marks.forEach(mark => {
+                    const normalizedPos = scale.valueToNormalizedPosition(mark.value);
+                    const x = this.normalizedToPixel(normalizedPos);
+                    const isIndex = mark.value === scale.leftIndex || mark.value === scale.rightIndex;
+
+                    this.drawTick(x, 15, isIndex ? 2 : 1, growFromBottom);
+                    this.drawLabel(x, mark.text, 15, growFromBottom);
+                });
+            }
+
+            renderSpecialMarks(scale, growFromBottom) {
+                this.specialMarks.forEach(mark => {
+                    if (mark.value >= scale.leftIndex && mark.value <= scale.rightIndex) {
+                        const normalizedPos = scale.valueToNormalizedPosition(mark.value);
+                        const x = this.normalizedToPixel(normalizedPos);
+
+                        // Save current styles
+                        const originalStrokeStyle = this.ctx.strokeStyle;
+                        const originalFillStyle = this.ctx.fillStyle;
+
+                        // Apply mark color if specified
+                        if (mark.color) {
+                            this.ctx.strokeStyle = mark.color;
+                            this.ctx.fillStyle = mark.color;
+                        }
+
+                        this.drawTick(x, mark.height || 15, mark.width || 1.5, growFromBottom);
+                        if (mark.label) {
+                            this.drawLabel(x, mark.label, mark.height || 15, growFromBottom);
+                        }
+
+                        // Restore original styles
+                        this.ctx.strokeStyle = originalStrokeStyle;
+                        this.ctx.fillStyle = originalFillStyle;
+                    }
+                });
+            }
+
+            drawTick(x, height, width, growFromBottom) {
+                if (x < 0 || x > this.pixelWidth) return;
+
+                const baseY = growFromBottom ? this.slotHeight : 0;
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, baseY);
+                this.ctx.lineTo(x, growFromBottom ? baseY - height : baseY + height);
+                this.ctx.lineWidth = width;
+                this.ctx.stroke();
+            }
+
+            drawLabel(x, text, height, growFromBottom) {
+                const labelWidth = this.ctx.measureText(text).width;
+                const labelX = x - labelWidth / 2;
+                const baseY = growFromBottom ? this.slotHeight : 0;
+                const labelY = growFromBottom ? baseY - height - 5 : baseY + height + 15;
+
+                this.ctx.fillText(text, labelX, labelY);
+            }
+
+            // Get all possible tick values for a scale (used for cursor snapping)
+            getAllTickValues(scale) {
+                const tickValues = new Set();
+
+                this.divisionRules.forEach(rule => {
+                    const [rangeStart, rangeEnd] = rule.range;
+                    const divisions = selectDivisions(this.divisionRules, rule.range);
+
+                    divisions.forEach(division => {
+                        const rangeWidth = rangeEnd - rangeStart;
+
+                        // Interpret divisions for multi-decade scales
+                        let numSteps;
+                        if (rangeStart >= 10 && division.name === 'tenths') {
+                            numSteps = rangeWidth;
+                        } else if (rangeStart >= 10 && division.name === 'seconds') {
+                            numSteps = rangeWidth / 5;
+                        } else {
+                            numSteps = Math.floor(rangeWidth * division.divisor);
+                        }
+
+                        const step = rangeWidth / numSteps;
+
+                        for (let i = 0; i <= numSteps; i++) {
+                            const value = rangeStart + i * step;
+                            if (value >= scale.leftIndex && value <= scale.rightIndex) {
+                                tickValues.add(Math.round(value * 1000) / 1000);
+                            }
+                        }
+                    });
+                });
+
+                // Add index values
+                tickValues.add(scale.leftIndex);
+                tickValues.add(scale.rightIndex);
+
+                // Add marks
+                const marks = this.generateMarks(scale);
+                marks.forEach(mark => tickValues.add(mark.value));
+
+                // Add special marks
+                this.specialMarks.forEach(mark => {
+                    if (mark.value >= scale.leftIndex && mark.value <= scale.rightIndex) {
+                        tickValues.add(mark.value);
+                    }
+                });
+
+                return Array.from(tickValues).sort((a, b) => a - b);
+            }
+        }
+
+        // Helper function to select divisions
+        function selectDivisions(divisionRules, range) {
+            const [rangeStart, rangeEnd] = range;
+            const applicableRule = divisionRules.find(rule =>
+                rangeStart >= rule.range[0] && rangeEnd <= rule.range[1]
+            ) || { divisions: ['tenths'] };
+
+            const selectedDivisions = [];
+            applicableRule.divisions.forEach(divName => {
+                const division = ScaleDivisions[divName];
+                if (!division) {
+                    console.error("ScaleDivision of type '", divName, "' doesn't exist.")
+                    return;
+                }
+                selectedDivisions.push({
+                    name: divName,
+                    ...division
+                });
+            });
+
+            return selectedDivisions;
+        }
+
+        /**
+         * Slide Rule Library
+         * A flexible, extensible slide rule implementation
+         */
+
+        class SlideRule {
+            // Component constants for clean API
+            static UPPER_STATOR = 'upperStator';
+            static SLIDE = 'slide';
+            static LOWER_STATOR = 'lowerStator';
+
+            constructor(containerId, options = {}) {
+                // Configuration with defaults
+                this.config = {
+                    width: options.width || 900,  // Direct pixel width
+                    slotHeight: options.slotHeight || 40,
+                    bufferSpace: options.bufferSpace || 30,
+                    snapToTicks: options.snapToTicks !== false,  // Enable tick snapping by default
+                    slots: {
+                        upperStator: options.upperStatorSlots || 0,
+                        slide: options.slideSlots || 2,
+                        lowerStator: options.lowerStatorSlots || 1
+                    },
+                    rendering: {
+                        improveQuality: options.improveQuality !== false,
+                        lineWidths: options.lineWidths || {}
+                    }
+                };
+
+                // Dynamic spacing - will be calculated based on secondary labels
+                this.config.componentLeftPadding = 0;
+                
+                // Calculate derived values
+                this.config.effectiveWidth = this.config.width - 2 * this.config.bufferSpace;
+                this.config.upperStatorHeight = this.config.slots.upperStator * this.config.slotHeight || 40;
+                this.config.slideHeight = this.config.slots.slide * this.config.slotHeight;
+                this.config.lowerStatorHeight = this.config.slots.lowerStator * this.config.slotHeight;
+                this.config.totalHeight = this.config.upperStatorHeight + this.config.slideHeight + this.config.lowerStatorHeight;
+
+                // Initialize DOM elements
+                this.container = document.getElementById(containerId);
+                if (!this.container) {
+                    throw new Error(`Container element with id '${containerId}' not found`);
+                }
+
+                // Create slide rule structure
+                this._createStructure();
+                this._initializeCanvases();
+                this._initializeCursor();
+                this._initializeDragHandling();
+
+                // Scale configurations
+                this.scaleConfigs = {
+                    upperStator: [],
+                    slide: [],
+                    lowerStator: []
+                };
+            }
+
+            /**
+             * Create the DOM structure for the slide rule
+             */
+            _createStructure() {
+                this.container.innerHTML = `
+                    <div id="sr-body">
+                        <div id="sr-upper-stator">
+                            <canvas id="sr-upper-stator-canvas"></canvas>
+                        </div>
+                        <div id="sr-slide">
+                            <canvas id="sr-slide-canvas"></canvas>
+                        </div>
+                        <div id="sr-lower-stator">
+                            <canvas id="sr-lower-stator-canvas"></canvas>
+                        </div>
+                        <div id="sr-cursor">
+                            <div id="sr-cursor-values"></div>
+                        </div>
+                    </div>
+                `;
+
+                // Get references to elements
+                this.elements = {
+                    body: document.getElementById('sr-body'),
+                    upperStator: document.getElementById('sr-upper-stator'),
+                    slide: document.getElementById('sr-slide'),
+                    lowerStator: document.getElementById('sr-lower-stator'),
+                    cursor: document.getElementById('sr-cursor'),
+                    cursorValues: document.getElementById('sr-cursor-values')
+                };
+
+                // Apply styles
+                this._applyStyles();
+            }
+
+            /**
+             * Apply dynamic styles based on configuration
+             */
+            _applyStyles() {
+                const { body, slide, upperStator, lowerStator } = this.elements;
+
+                // Apply dimensions
+                body.style.width = this.config.width + 'px';
+                slide.style.height = this.config.slideHeight + 'px';
+                upperStator.style.height = this.config.upperStatorHeight + 'px';
+                lowerStator.style.height = this.config.lowerStatorHeight + 'px';
+
+                // Ensure full width is visible
+                document.body.style.minWidth = this.config.width + 'px';
+                document.body.style.overflowX = 'auto';
+            }
+
+            /**
+             * Initialize canvases with proper scaling
+             */
+            _initializeCanvases() {
+                this.canvases = {
+                    upperStator: this._setupCanvas('sr-upper-stator-canvas', this.config.width, this.config.upperStatorHeight),
+                    slide: this._setupCanvas('sr-slide-canvas', this.config.width, this.config.slideHeight),
+                    lowerStator: this._setupCanvas('sr-lower-stator-canvas', this.config.width, this.config.lowerStatorHeight)
+                };
+            }
+
+            /**
+             * Set up individual canvas with DPI scaling
+             */
+            _setupCanvas(canvasId, width, height) {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+
+                // Set actual canvas size
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+
+                // Set display size
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+
+                // Scale context
+                ctx.scale(dpr, dpr);
+
+                // Apply rendering improvements if enabled
+                if (this.config.rendering.improveQuality) {
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.translate(0.5, 0.5);
+                }
+
+                return { canvas, ctx, width, height };
+            }
+
+            /**
+             * Initialize cursor
+             */
+            _initializeCursor() {
+                this.cursor = {
+                    width: 96,
+                    position: 0, // Will be set properly after layout update
+                    isDragging: false,
+                    dragStartX: 0,
+                    minPosition: 0,
+                    maxPosition: 0
+                };
+
+                this.elements.cursor.style.width = this.cursor.width + 'px';
+                
+                // Initial position will be set after layout is determined
+                this.cursor.position = this.config.bufferSpace - this.cursor.width / 2;
+                this.elements.cursor.style.left = this.cursor.position + 'px';
+            }
+
+            /**
+             * Initialize drag handling
+             */
+            _initializeDragHandling() {
+                this.slideState = {
+                    position: 0,
+                    isDragging: false,
+                    dragStartX: 0
+                };
+
+                // Mouse events
+                this.elements.slide.addEventListener('mousedown', (e) => this._handleSlideStart(e));
+                this.elements.cursor.addEventListener('mousedown', (e) => this._handleCursorStart(e));
+                document.addEventListener('mousemove', (e) => this._handleDragMove(e));
+                document.addEventListener('mouseup', () => this._handleDragEnd());
+
+                // Touch events
+                this.elements.slide.addEventListener('touchstart', (e) => this._handleSlideStart(e));
+                this.elements.cursor.addEventListener('touchstart', (e) => this._handleCursorStart(e));
+                document.addEventListener('touchmove', (e) => this._handleDragMove(e));
+                document.addEventListener('touchend', () => this._handleDragEnd());
+            }
+
+            _handleSlideStart(e) {
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                this.slideState.isDragging = true;
+                this.slideState.dragStartX = clientX - this.slideState.position;
+            }
+
+            _handleCursorStart(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                this.cursor.isDragging = true;
+                this.cursor.dragStartX = clientX - this.cursor.position;
+            }
+
+            _handleDragMove(e) {
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+
+                if (this.slideState.isDragging) {
+                    const newPosition = clientX - this.slideState.dragStartX;
+                    this.setSlidePosition(newPosition);
+                }
+
+                if (this.cursor.isDragging) {
+                    const newPosition = clientX - this.cursor.dragStartX;
+                    this.setCursorPosition(newPosition);
+                }
+            }
+
+            _handleDragEnd() {
+                this.slideState.isDragging = false;
+                this.cursor.isDragging = false;
+            }
+
+            /**
+             * Set slide position with bounds checking
+             */
+            setSlidePosition(position) {
+                this.slideState.position = Math.max(
+                    -this.config.effectiveWidth,
+                    Math.min(this.config.effectiveWidth, position)
+                );
+                this.elements.slide.style.transform = `translateX(${this.slideState.position}px)`;
+                this._updateCursorValues();
+            }
+
+            /**
+             * Set cursor position with bounds checking
+             */
+            setCursorPosition(position) {
+                this.cursor.position = Math.max(
+                    this.cursor.minPosition,
+                    Math.min(this.cursor.maxPosition, position)
+                );
+                this.elements.cursor.style.left = this.cursor.position + 'px';
+                this._updateCursorValues();
+            }
+
+            /**
+             * Reset slide to initial position
+             */
+            resetSlide() {
+                this.elements.slide.classList.add('resetting');
+                this.setSlidePosition(0);
+                setTimeout(() => {
+                    this.elements.slide.classList.remove('resetting');
+                }, 300);
+            }
+
+            /**
+             * Render a scale on the slide rule
+             * @param {Scale} scale - The scale object to render
+             * @param {Object} config - Rendering configuration
+             */
+            render(scale, config) {
+                if (!config.component || !this.scaleConfigs[config.component]) {
+                    throw new Error(`Invalid component: ${config.component}`);
+                }
+
+                // Get canvas context and dimensions for the component
+                const canvas = this.canvases[config.component];
+                
+                // Create renderer with slide rule's configuration
+                const renderer = new ScaleRenderer(canvas.ctx, this.config.width, canvas.height, this.config.bufferSpace, {
+                    name: config.name || 'Scale',
+                    secondaryLabel: config.secondaryLabel || null,
+                    slot: config.slot || 0,
+                    orientation: config.orientation || 'bottom',
+                    marks: config.marks || 'auto',
+                    specialMarks: config.specialMarks || [],
+                    divisionRules: config.divisionRules || DivisionRuleSets.singleDecadeLog,
+                    reversed: config.reversed || false,
+                    slotHeight: this.config.slotHeight
+                });
+
+                // Store the scale and renderer
+                this.scaleConfigs[config.component].push({
+                    scale: scale,
+                    renderer: renderer
+                });
+
+                // Re-render all scales and update labels
+                this._updateLayoutForSecondaryLabels();
+                this._renderAllScales();
+                this._createScaleLabels();
+            }
+
+            /**
+             * Check if any scales have secondary labels and update layout accordingly
+             */
+            _updateLayoutForSecondaryLabels() {
+                let hasSecondaryLabels = false;
+                
+                // Check all scale configs for secondary labels
+                ['upperStator', 'slide', 'lowerStator'].forEach(component => {
+                    this.scaleConfigs[component].forEach(config => {
+                        if (config.renderer.secondaryLabel) {
+                            hasSecondaryLabels = true;
+                        }
+                    });
+                });
+
+                // Update padding and layout
+                this.config.componentLeftPadding = hasSecondaryLabels ? 50 : 0;
+                
+                // Adjust effective width when secondary labels are present
+                this.config.effectiveWidth = this.config.width - 2 * this.config.bufferSpace - this.config.componentLeftPadding;
+                
+                // Update component styles and canvas dimensions
+                if (hasSecondaryLabels) {
+                    this.elements.upperStator.style.paddingLeft = '50px';
+                    this.elements.slide.style.paddingLeft = '50px';
+                    this.elements.lowerStator.style.paddingLeft = '50px';
+                    
+                    // Offset canvases and reduce their width
+                    const adjustedWidth = this.config.width - 50;
+                    this.canvases.upperStator.canvas.style.left = '50px';
+                    this.canvases.upperStator.canvas.style.width = adjustedWidth + 'px';
+                    this.canvases.slide.canvas.style.left = '50px';
+                    this.canvases.slide.canvas.style.width = adjustedWidth + 'px';
+                    this.canvases.lowerStator.canvas.style.left = '50px';
+                    this.canvases.lowerStator.canvas.style.width = adjustedWidth + 'px';
+                } else {
+                    this.elements.upperStator.style.paddingLeft = '0px';
+                    this.elements.slide.style.paddingLeft = '0px';
+                    this.elements.lowerStator.style.paddingLeft = '0px';
+                    
+                    // Reset canvas positions and width
+                    this.canvases.upperStator.canvas.style.left = '0px';
+                    this.canvases.upperStator.canvas.style.width = this.config.width + 'px';
+                    this.canvases.slide.canvas.style.left = '0px';
+                    this.canvases.slide.canvas.style.width = this.config.width + 'px';
+                    this.canvases.lowerStator.canvas.style.left = '0px';
+                    this.canvases.lowerStator.canvas.style.width = this.config.width + 'px';
+                }
+
+                // Update cursor bounds
+                this._updateCursorBounds();
+            }
+
+            /**
+             * Update cursor positioning bounds based on current layout
+             */
+            _updateCursorBounds() {
+                this.cursor.minPosition = this.config.componentLeftPadding + this.config.bufferSpace - this.cursor.width / 2;
+                this.cursor.maxPosition = this.config.componentLeftPadding + this.config.bufferSpace + this.config.effectiveWidth - this.cursor.width / 2;
+                
+                // Reposition cursor if it's outside new bounds
+                if (this.cursor.position < this.cursor.minPosition) {
+                    this.setCursorPosition(this.cursor.minPosition);
+                } else if (this.cursor.position > this.cursor.maxPosition) {
+                    this.setCursorPosition(this.cursor.maxPosition);
+                }
+            }
+
+            /**
+             * Render all scales
+             */
+            _renderAllScales() {
+                // Clear all canvases
+                Object.values(this.canvases).forEach(({ ctx, width, height }) => {
+                    ctx.clearRect(-1, -1, width + 2, height + 2); // Account for translate
+                });
+
+                // Render each component's scales
+                ['upperStator', 'slide', 'lowerStator'].forEach(component => {
+                    this.scaleConfigs[component].forEach((config, index) => {
+                        config.renderer.render(config.scale, index === 0);
+                    });
+                });
+            }
+
+            /**
+             * Create scale labels dynamically
+             */
+            _createScaleLabels() {
+                // Remove existing labels
+                this.container.querySelectorAll('.sr-scale-label').forEach(label => label.remove());
+
+                // Create new labels
+                ['upperStator', 'slide', 'lowerStator'].forEach(component => {
+                    const element = this.elements[component];
+                    this.scaleConfigs[component].forEach(config => {
+                        // Create primary label
+                        const label = document.createElement('span');
+                        label.className = 'sr-scale-label';
+                        label.textContent = config.renderer.name;
+
+                        if (config.renderer.orientation === 'top') {
+                            label.classList.add('sr-scale-label-top');
+                        } else {
+                            label.classList.add('sr-scale-label-bottom');
+                        }
+
+                        element.appendChild(label);
+
+                        // Create secondary label if specified
+                        if (config.renderer.secondaryLabel) {
+                            const secondaryLabel = document.createElement('span');
+                            secondaryLabel.className = 'sr-scale-label sr-secondary-label';
+                            secondaryLabel.textContent = config.renderer.secondaryLabel;
+                            
+                            if (config.renderer.orientation === 'top') {
+                                secondaryLabel.classList.add('sr-scale-label-top');
+                            } else {
+                                secondaryLabel.classList.add('sr-scale-label-bottom');
+                            }
+                            
+                            element.appendChild(secondaryLabel);
+                        }
+                    });
+                });
+            }
+
+            /**
+             * Enable/disable developer mode
+             */
+            setDeveloperMode(enabled) {
+                if (enabled) {
+                    this.elements.body.classList.add('sr-dev-mode');
+                    document.body.classList.add('dev-mode');
+                } else {
+                    this.elements.body.classList.remove('sr-dev-mode');
+                    document.body.classList.remove('dev-mode');
+                }
+                this._updateCursorValues();
+            }
+
+            /**
+             * Update cursor value display
+             */
+            _updateCursorValues() {
+                if (!this.elements.body.classList.contains('sr-dev-mode')) return;
+
+                const hairlineX = this.cursor.position + this.cursor.width / 2;
+                let html = '';
+
+                // Build scale list in visual order
+                const scales = [];
+                ['upperStator', 'slide', 'lowerStator'].forEach(component => {
+                    this.scaleConfigs[component].forEach(config => {
+                        scales.push({
+                            name: config.renderer.name,
+                            scale: config.scale,
+                            renderer: config.renderer,
+                            component: component
+                        });
+                    });
+                });
+
+                scales.forEach(scaleInfo => {
+                    // The hairline position is relative to the document
+                    // Convert to canvas-relative position by subtracting component left padding
+                    const canvasRelativeX = hairlineX - this.config.componentLeftPadding;
+                    
+                    // For slide scales, also subtract slide position
+                    const effectiveX = scaleInfo.component === 'slide'
+                        ? canvasRelativeX - this.slideState.position
+                        : canvasRelativeX;
+                    
+                    const value = this._getScaleValue(scaleInfo.scale, effectiveX, scaleInfo.renderer);
+                    html += `<div class="sr-scale-value"><span class="sr-scale-name">${scaleInfo.name}:</span> ${value.toFixed(2)}</div>`;
+                });
+
+                this.elements.cursorValues.innerHTML = html;
+            }
+
+            /**
+             * Calculate value at position on scale with optional snapping
+             */
+            _getScaleValue(scale, pixelPosition, renderer = null) {
+                const normalizedPosition = (pixelPosition - this.config.bufferSpace) / this.config.effectiveWidth;
+
+                if (normalizedPosition < 0) return scale.leftIndex;
+                if (normalizedPosition > 1) return scale.rightIndex;
+
+                let exactValue;
+                if (scale.type === 'logarithmic') {
+                    const logRange = Math.log10(scale.rightIndex / scale.leftIndex);
+                    exactValue = scale.leftIndex * Math.pow(10, normalizedPosition * logRange);
+                } else {
+                    exactValue = scale.leftIndex + normalizedPosition * (scale.rightIndex - scale.leftIndex);
+                }
+
+                // If renderer provided and snap enabled, snap to nearest tick
+                if (renderer && this.config.snapToTicks !== false) {
+                    const tickValues = renderer.getAllTickValues(scale);
+                    let nearestTick = tickValues[0];
+                    let minDistance = Math.abs(exactValue - nearestTick);
+                    
+                    for (const tick of tickValues) {
+                        const distance = Math.abs(exactValue - tick);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearestTick = tick;
+                        }
+                    }
+                    
+                    return nearestTick;
+                }
+
+                return exactValue;
+            }
+
+            /**
+             * Get configuration
+             */
+            getConfig() {
+                return { ...this.config };
+            }
+        }
+
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create slide rule instance
+            const slideRule = new SlideRule('slide-rule-container', {
+                width: 1200,  // Direct pixel width - easy to understand and change
+                slotHeight: 40,
+                bufferSpace: 30,
+                upperStatorSlots: 1,
+                slideSlots: 2,
+                lowerStatorSlots: 1,
+                improveQuality: true
+            });
+
+            // Create scale definitions
+            const singleDecadeLogScale = new Scale({
+                type: 'logarithmic',
+                leftIndex: 1,
+                rightIndex: 10
+            });
+
+            const twoDecadeLogScale = new Scale({
+                type: 'logarithmic',
+                leftIndex: 1,
+                rightIndex: 100
+            });
+
+            // Render A scale (upper stator)
+            slideRule.render(twoDecadeLogScale, {
+                component: SlideRule.UPPER_STATOR,
+                slot: 0,
+                name: 'A',
+                secondaryLabel: 'x²',
+                orientation: 'bottom',
+                marks: [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100],
+                divisionRules: DivisionRuleSets.twoDecadeLog
+            });
+
+            // Render B scale (slide top)
+            slideRule.render(twoDecadeLogScale, {
+                component: SlideRule.SLIDE,
+                slot: 0,
+                name: 'B',
+                secondaryLabel: 'x²',
+                orientation: 'top',
+                marks: [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100],
+                divisionRules: DivisionRuleSets.twoDecadeLog
+            });
+
+            // Render C scale (slide bottom)
+            slideRule.render(singleDecadeLogScale, {
+                component: SlideRule.SLIDE,
+                slot: 1,
+                name: 'C',
+                orientation: 'bottom',
+                marks: [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10],
+                specialMarks: [{
+                    value: Math.PI,
+                    label: 'π',
+                    height: 18,
+                    width: 1.5,
+                    color: '#A52A2A'
+                }],
+                divisionRules: DivisionRuleSets.singleDecadeLog
+            });
+
+            // Render D scale (lower stator)
+            slideRule.render(singleDecadeLogScale, {
+                component: SlideRule.LOWER_STATOR,
+                slot: 0,
+                name: 'D',
+                orientation: 'top',
+                marks: [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10],
+                divisionRules: DivisionRuleSets.singleDecadeLog
+            });
+
+            // Enable developer mode by default
+            slideRule.setDeveloperMode(true);
+
+            // Add UI controls
+            const devToggle = document.getElementById('dev-toggle');
+            const resetButton = document.getElementById('reset-button');
+
+            if (devToggle) {
+                devToggle.addEventListener('click', () => {
+                    const isDevMode = document.body.classList.contains('dev-mode');
+                    slideRule.setDeveloperMode(!isDevMode);
+                });
+            }
+
+            if (resetButton) {
+                resetButton.addEventListener('click', () => {
+                    slideRule.resetSlide();
+                });
+            }
+
+            // Store reference for external control
+            window.slideRuleInstance = slideRule;
+        });
+    </script>
+</body>
+</html>

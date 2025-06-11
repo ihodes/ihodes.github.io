@@ -27,7 +27,8 @@ PAGES = {
     'about': (ENV.get_template('about.html'), "about"),
     'shelf': (ENV.get_template('shelf.html'), "shelf"),
     'recipes': (ENV.get_template('recipes.html'), "recipes"),
-    'nec': (ENV.get_template('nec.html'), "nec")
+    'nec': (ENV.get_template('nec.html'), "nec"),
+    'sliderule': (ENV.get_template('sliderule.html'), "sliderule")
 }
 
 TEMPLATES = {
