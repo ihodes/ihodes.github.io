@@ -330,6 +330,10 @@ img[src*="datavant"] {
     margin-bottom: 20px;
   }
 
+  span#date {
+    text-align: center;
+  }
+
   ul#posts {
     padding: 0; 
     list-style-type: none;
