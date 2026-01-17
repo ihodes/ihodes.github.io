@@ -58,19 +58,25 @@ def markdown_post(post_path):
 def process_post(post_path):
     post = markdown_post(post_path)
     title = post.metadata['title']
+    slugtitle = post.metadata.get('slugtitle')
 
     publish = True
     publish_val = post.metadata.get('publish')
     if publish_val is not None:
         publish = False if publish_val.lower().strip() == 'false' else True
-    slug = sluggify(title)
+    if slugtitle is not None:
+        slug = sluggify(slugtitle)
+    else:
+        slug = sluggify(title)
     d = datetime.strptime(post.metadata['date'], '%Y-%m-%d')
     post_data = {
         'title': title,
         'publish': publish,
+        'slug': slug,
         'url': os.path.join(POST_PATH, slug),
         'date': post.metadata['date'],
         'formatted_date': d.strftime('%B %d, %Y'),
+        'short_date': d.strftime('%b %Y'),
         'html': post,
         'metadata': post.metadata,
     }
@@ -141,13 +147,11 @@ def write_posts():
     posts = get_posts(include_unpublished=True)
     for post in posts:
         if post['publish'] == False:
-            print(f"skipping post '{post['title']}'")
+            print(f"skipping post '{post['title']}', because 'publish' is False in the frontmatter.")
             continue
-
         print("writing ", post['title'])
         html = format_post(post)
-        post_title_slug = sluggify(post['title'])
-        post_path = os.path.join(dest_post_path, post_title_slug)
+        post_path = os.path.join(dest_post_path, post['slug'])
         pathlib.Path(post_path).mkdir(parents=True, exist_ok=True)
         with open(os.path.join(post_path, 'index.html'), 'w') as f:
             f.write(html)

@@ -1,6 +1,7 @@
 ---
 olayout: post
-title: Experiment types in product development
+title: Experiment types in product development, I
+slugtitle: Experiment types in product development
 subtitle:
 summary:
 categories: product-management theories

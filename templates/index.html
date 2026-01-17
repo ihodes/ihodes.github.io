@@ -24,8 +24,9 @@
 <ul id="posts">
 {% for post in posts %}
 <li>
-  <span class="date">{{ post.date }}</span>
   <a href="{{ post.url }}">{{ post.title }}</a>
+  <span class="dotted-line"></span>
+  <span class="date">{{ post.short_date }}</span>
 </li>
 {% endfor %}
 </ul>

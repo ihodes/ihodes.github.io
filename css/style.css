@@ -58,20 +58,47 @@ p, ul, ol, dl, dt, dd {
 ul#posts {
     list-style-type: none;
     padding-left: 0;
+    width: 100%;
 }
 
 ul#posts li {
+    display: flex;
+    align-items: center;
     margin-bottom: 5px;
     padding: 5px;
 }
 
 ul#posts li a {
     font-weight: bold;
+    flex-shrink: 0;
+    border-bottom: none;
+}
+
+ul#posts li a:hover {
+    border-bottom: none;
+}
+
+ul#posts li .dotted-line {
+    flex-grow: 1;
+    margin: 0 10px;
+    min-width: 20px;
+    height: 1em;
+    position: relative;
+}
+
+ul#posts li .dotted-line::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-bottom: 1px dotted #999;
 }
 
 ul#posts li span.date {
-  color: #777;
-  margin-right: 5px;
+    color: #777;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 
@@ -154,12 +181,6 @@ span#date {
     
 }
 
-ul#posts .date {
-  display: inline-block;
-  width: 110px; /* Adjust the width as needed */
-  text-align: right;
-  margin-right: 10px; /* Optional: adds some space between the date and the title */
-}
 
 #copy {
     padding: 33px 33px;
@@ -229,6 +250,7 @@ img[src*="datavant"] {
 .company-logo:hover {
   opacity: 1;
   transform: scale(1.05);
+  filter: none;
 }
 
 .company-logos a {
@@ -263,6 +285,10 @@ img[src*="datavant"] {
 
   ul#posts li a, ul#posts li span.date {
     color: #F2F0E5;
+  }
+
+  ul#posts li .dotted-line::after {
+    border-bottom-color: #666;
   }
 
   .logo {
@@ -335,11 +361,14 @@ img[src*="datavant"] {
   }
 
   ul#posts {
-    padding: 0; 
+    padding: 0;
     list-style-type: none;
   }
 
   ul#posts li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     background-color: transparent;
     margin-bottom: 15px;
     padding: 10px 5px;
@@ -347,9 +376,12 @@ img[src*="datavant"] {
   }
 
   ul#posts li a {
-      color: #2a9d8f;
-    font-weight: normal;
     font-size: 18px;
+    order: 1;
+  }
+
+  ul#posts li .dotted-line {
+    display: none;
   }
 
   ul#posts li span.date {
@@ -357,10 +389,7 @@ img[src*="datavant"] {
     color: #666;
     font-size: 14px;
     margin-bottom: 5px;
-  }
-
-  ul#posts .date {
-      text-align: left;
+    order: 0;
   }
 
   .company-logos {
