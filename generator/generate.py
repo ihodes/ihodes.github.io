@@ -205,6 +205,9 @@ def write_assets():
     shutil.copytree(CSS_PATH, os.path.join(DEST_ROOT_PATH, CSS_PATH))
     print('copying js to {}'.format(DEST_ROOT_PATH))
     shutil.copytree(JS_PATH, os.path.join(DEST_ROOT_PATH, JS_PATH))
+    print('copying floppybird to {}'.format(DEST_ROOT_PATH))
+    shutil.copytree('templates/floppybird', os.path.join(DEST_ROOT_PATH, 'floppybird'),
+                    ignore=shutil.ignore_patterns('node_modules', '*.test.js', 'package*.json', '*.md'))
 
 
 def write_website(base_url):
