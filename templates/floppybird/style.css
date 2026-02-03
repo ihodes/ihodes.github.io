@@ -387,7 +387,8 @@ body {
   border-left: 2px solid var(--border);
 }
 
-.accel-table .result-cell {
+.accel-table .result-cell,
+.accel-table th.result-header {
   text-align: right;
 }
 

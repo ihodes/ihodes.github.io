@@ -372,11 +372,11 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
             <th data-formula="Cost per chip-hour in USD">$/hr <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.cost}>ⓘ</span></th>
             ${hasResults && html`
               <th className="col-sep" data-formula="HW FLOPs = Model FLOPs / MFU">HW FLOPs</th>
-              <th data-formula="Cost = (HW FLOPs / BF16) / 3600 × $/hr">Total Cost</th>
+              <th className="result-header" data-formula="Cost = (HW FLOPs / BF16) / 3600 × $/hr">Total Cost</th>
               ${TIME_PERIODS.map((p, i) => html`
-                <th key=${p.label} className=${i === 0 ? 'col-sep' : ''} data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">${p.label}</th>
+                <th key=${p.label} className=${`result-header${i === 0 ? ' col-sep' : ''}`} data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">${p.label}</th>
               `)}
-              <th data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">
+              <th className="result-header" data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">
                 <input type="number" className="custom-days-input"
                   placeholder="#"
                   value=${customDays}
