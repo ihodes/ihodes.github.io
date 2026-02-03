@@ -6,3 +6,4 @@ venv/
 venv/*
 /jedi.json
 /.emigo_repomap/
+node_modules/
