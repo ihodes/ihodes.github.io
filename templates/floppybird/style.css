@@ -222,9 +222,9 @@ body {
 }
 
 .formula-desc {
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: var(--fg-muted);
-  margin-bottom: 0.5rem;
+  margin-left: 0.5rem;
 }
 
 .flop-display {
@@ -236,6 +236,13 @@ body {
   color: var(--fg);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.flop-label {
+  font-size: 1rem;
+  color: var(--fg-muted);
+  font-weight: normal;
+  margin-left: 0.5rem;
 }
 
 .flop-emoji {

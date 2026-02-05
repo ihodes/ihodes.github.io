@@ -218,11 +218,10 @@ export function ModelSpec({ onFlopChange, onStateChange, onSave, initialState } 
       </div>
       <div className="flop-display" aria-live="polite">
         <span className="flop-value">${modelFlops ? formatSci(modelFlops) : '\u2014'}</span>
+        <span className="flop-label">${' '}model FLOPs</span>
+        ${(calcType === 'moe' || calcType === 'dense') && html`<span className="formula-desc">${' '}= 6 × P × T</span>`}
         ${displayEmoji && html`<span className="flop-emoji">${' '}${displayEmoji}</span>`}
       </div>
-      ${(calcType === 'moe' || calcType === 'dense') && html`
-        <div className="formula-desc">Training FLOPs = 6 × P × T</div>
-      `}
     </section>
   `;
 }
