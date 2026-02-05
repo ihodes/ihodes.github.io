@@ -45,7 +45,7 @@ describe('Scaffold structure', () => {
     const html = render(AcceleratorTable);
     assert.match(html, /BF16 FLOP\/s/);
     assert.match(html, /MFU/);
-    assert.match(html, /Scaling Factor/);
+    assert.match(html, /Scale Coef\./);
     assert.match(html, /\$\/hr/);
   });
 
@@ -92,9 +92,10 @@ describe('Model Spec interactive UI', () => {
     assert.match(html, /\u2014/, 'Should show em dash when no inputs');
   });
 
-  it('model name input has dynamic placeholder when inputs empty', () => {
+  it('model name input shows auto-generated name as value when inputs empty', () => {
     const html = render(ModelSpec);
-    assert.match(html, /placeholder="Model name"/, 'Default placeholder should be "Model name"');
+    // When no inputs are filled, the model name field shows "Model name" as its value (not placeholder)
+    assert.match(html, /value="Model name"/, 'Default value should be "Model name"');
   });
 });
 
@@ -118,10 +119,14 @@ describe('AcceleratorTable results display', () => {
     assert.match(html, /HW FLOPs/);
   });
 
-  it('does not show result columns when modelFlops is null', () => {
+  it('shows result columns with placeholders when modelFlops is null', () => {
     const html = renderAccelTable({});
-    assert.doesNotMatch(html, /1 day/);
-    assert.doesNotMatch(html, /HW FLOPs/);
+    // Result columns should always be visible
+    assert.match(html, /1 day/);
+    assert.match(html, /HW FLOPs/);
+    // But values should be em dashes (placeholders)
+    const tbody = html.split('<tbody>')[1]?.split('</tbody>')[0] ?? '';
+    assert.match(tbody, /\u2014/, 'Should show em dash placeholders');
   });
 
   it('renders correct chip count for known v5p example (73 chips at 4wks)', () => {
@@ -197,12 +202,12 @@ describe('Info tooltips on column headers', () => {
     assert.equal(tipCount, 5, 'Should have 5 info tooltips (one per data column)');
   });
 
-  it('info tooltips have title attributes with descriptive text', () => {
+  it('info tooltips have data-tip attributes with descriptive text', () => {
     const html = renderAccelTable({});
     const thead = html.split('<thead>')[1]?.split('</thead>')[0] ?? '';
-    assert.match(thead, /title="[^"]*BF16[^"]*"/, 'BF16 tooltip should have descriptive title');
-    assert.match(thead, /title="[^"]*Utilization[^"]*"/, 'MFU tooltip should have descriptive title');
-    assert.match(thead, /title="[^"]*scaling[^"]*"/i, 'Scaling factor tooltip should have descriptive title');
+    assert.match(thead, /data-tip="[^"]*BF16[^"]*"/, 'BF16 tooltip should have descriptive data-tip');
+    assert.match(thead, /data-tip="[^"]*Utilization[^"]*"/, 'MFU tooltip should have descriptive data-tip');
+    assert.match(thead, /data-tip="[^"]*Penalty[^"]*"/i, 'Scale coefficient tooltip should have descriptive data-tip');
   });
 });
 
@@ -230,8 +235,8 @@ describe('Editable cells', () => {
     const tbody = html.split('<tbody>')[1]?.split('</tbody>')[0] ?? '';
     // v5p default MFU is 0.6
     assert.match(tbody, /value="0\.6"/, 'Should show default MFU for v5p');
-    // Default cost is 3.50 for all
-    assert.match(tbody, /value="3\.50"/, 'Should show default cost');
+    // v4p default cost is 3.22
+    assert.match(tbody, /value="3\.22"/, 'Should show default cost for v4p');
   });
 
   it('editable cells with defaults have the cell-default class', () => {
@@ -246,15 +251,10 @@ describe('Editable cells', () => {
     assert.doesNotMatch(tbody, /btn-reset/, 'No reset buttons when values are defaults');
   });
 
-  it('scaling factor input has max="1" constraint', () => {
+  it('editable cells render as text inputs for free-form editing', () => {
     const html = renderAccelTable({});
-    // Scaling factor inputs should have max=1
-    assert.match(html, /max="1"/, 'Scaling factor should have max=1');
-  });
-
-  it('MFU input has max="1" and min="0.01" constraints', () => {
-    const html = renderAccelTable({});
-    assert.match(html, /min="0\.01"/, 'MFU should have min=0.01');
+    // Editable cells should be text inputs (validation done on blur in JS)
+    assert.match(html, /type="text".*cell-editable/, 'Editable cells should use text inputs');
   });
 
   it('results use overrides when provided via initial overrides', () => {
@@ -446,9 +446,9 @@ describe('Custom days input in table header', () => {
     assert.match(html, /class="custom-days-input"/, 'Should have custom-days-input');
   });
 
-  it('does not render custom days input when no modelFlops', () => {
+  it('renders custom days input even when no modelFlops (columns always visible)', () => {
     const html = renderAccelTable({});
-    assert.doesNotMatch(html, /custom-days-input/, 'No custom days input without results');
+    assert.match(html, /custom-days-input/, 'Custom days input always visible');
   });
 
   it('renders custom days column results when initialCustomDays provided', () => {
@@ -460,16 +460,16 @@ describe('Custom days input in table header', () => {
     const tbody = html.split('<tbody>')[1]?.split('</tbody>')[0] ?? '';
     // Result cells for custom period should be present (more result-cell entries)
     const resultCells = (tbody.match(/result-cell/g) || []).length;
-    // 4 default visible rows × (4 default periods + 1 custom) = 20
-    assert.equal(resultCells, 20, 'Should have 20 result cells (4 rows × 5 periods)');
+    // 4 default visible rows × (4 periods + 1 custom days + 1 time + 1 total cost) = 28
+    assert.equal(resultCells, 28, 'Should have 28 result cells (4 rows × 7 columns)');
   });
 
-  it('default (no custom days) shows 4 period result cells per row', () => {
+  it('always shows 7 result columns per row (4 periods + custom days + time + total cost)', () => {
     const html = renderAccelTable({ modelFlops: 4.8e22 });
     const tbody = html.split('<tbody>')[1]?.split('</tbody>')[0] ?? '';
     const resultCells = (tbody.match(/result-cell/g) || []).length;
-    // 4 default visible rows × 4 default periods = 16
-    assert.equal(resultCells, 16, 'Should have 16 result cells (4 rows × 4 periods)');
+    // 4 default visible rows × (4 periods + 1 custom days + 1 time + 1 total cost) = 28
+    assert.equal(resultCells, 28, 'Should have 28 result cells (4 rows × 7 columns)');
   });
 });
 

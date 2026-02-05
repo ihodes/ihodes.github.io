@@ -1,6 +1,6 @@
-import { createElement, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createElement, useState, useEffect, useCallback, useRef } from 'react';
 import htm from 'htm';
-import { ACCELERATORS, DEFAULT_VISIBLE, TIME_PERIODS, formatSci, formatCount, formatCost, computeModelFlops, computeResults, flopEmoji, saveState, loadState, loadSavedCalcs, saveCalcToList, deleteCalcFromList, togglePinCalc, getSortedCalcs, calcDisplayName, generateCSV, SAVED_LIST_KEY } from './calc.js';
+import { ACCELERATORS, DEFAULT_VISIBLE, TIME_PERIODS, formatSci, formatCount, formatCost, computeModelFlops, computeResults, computeTimeForChips, formatDuration, flopEmoji, saveState, loadState, loadSavedCalcs, saveCalcToList, deleteCalcFromList, togglePinCalc, getSortedCalcs, calcDisplayName, generateCSV, SAVED_LIST_KEY } from './calc.js';
 
 const html = htm.bind(createElement);
 
@@ -66,6 +66,16 @@ export function SavedCalcsModal({ calcs, selectedIndex, onClose, onSelect, onDel
 
 function parseNum(str) {
   if (!str || str.trim() === '') return null;
+  const s = str.trim().toUpperCase();
+  // Check for M/B/T suffix (million/billion/trillion)
+  const suffixMatch = s.match(/^([\d.e+-]+)\s*([MBT])$/i);
+  if (suffixMatch) {
+    const num = parseFloat(suffixMatch[1]);
+    const suffix = suffixMatch[2].toUpperCase();
+    const multiplier = suffix === 'M' ? 1e6 : suffix === 'B' ? 1e9 : 1e12;
+    const result = num * multiplier;
+    return isFinite(result) && result > 0 ? result : null;
+  }
   const n = parseFloat(str);
   return isFinite(n) && n > 0 ? n : null;
 }
@@ -142,7 +152,7 @@ export function ModelSpec({ onFlopChange, onStateChange, onSave, initialState } 
             aria-label="Model name"
             value=${modelName || autoName}
             onChange=${e => setModelName(e.target.value)}
-            onFocus=${e => { if (!modelName) { setModelName(autoName); e.target.select(); } }} />
+            onFocus=${e => e.target.select()} />
         </label>
         ${onSave && html`
           <button className="btn-save" onClick=${onSave}
@@ -163,7 +173,7 @@ export function ModelSpec({ onFlopChange, onStateChange, onSave, initialState } 
           <label className="tufte-field">
             <span className="tufte-label">Active params</span>
             <input className="input-active-params" type="text"
-              placeholder="e.g. 8e9"
+              placeholder="e.g. 8B or 8e9"
               value=${activeParams}
               onFocus=${handleSpecFocus} onBlur=${handleSpecBlur}
               onChange=${e => setActiveParams(e.target.value)} />
@@ -171,7 +181,7 @@ export function ModelSpec({ onFlopChange, onStateChange, onSave, initialState } 
           <label className="tufte-field">
             <span className="tufte-label">Tokens</span>
             <input className="input-tokens" type="text"
-              placeholder="e.g. 7e12"
+              placeholder="e.g. 7T or 7e12"
               value=${tokens}
               onFocus=${handleSpecFocus} onBlur=${handleSpecBlur}
               onChange=${e => setTokens(e.target.value)} />
@@ -181,7 +191,7 @@ export function ModelSpec({ onFlopChange, onStateChange, onSave, initialState } 
           <label className="tufte-field">
             <span className="tufte-label">Total params</span>
             <input className="input-total-params" type="text"
-              placeholder="e.g. 70e9"
+              placeholder="e.g. 70B or 70e9"
               value=${totalParams}
               onFocus=${handleSpecFocus} onBlur=${handleSpecBlur}
               onChange=${e => setTotalParams(e.target.value)} />
@@ -189,7 +199,7 @@ export function ModelSpec({ onFlopChange, onStateChange, onSave, initialState } 
           <label className="tufte-field">
             <span className="tufte-label">Tokens</span>
             <input className="input-tokens" type="text"
-              placeholder="e.g. 2e12"
+              placeholder="e.g. 2T or 2e12"
               value=${tokens}
               onFocus=${handleSpecFocus} onBlur=${handleSpecBlur}
               onChange=${e => setTokens(e.target.value)} />
@@ -245,9 +255,71 @@ const COLUMN_TOOLTIPS = {
   cost: 'Cost per chip per hour in USD',
 };
 
+function EditableCell({ value, defaultValue, onChange, onReset, isEdited, step, min, max, formatValue }) {
+  const displayValue = formatValue ? formatValue(value) : String(value);
+  const [inputValue, setInputValue] = useState(displayValue);
+  const [isFocused, setIsFocused] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Sync inputValue when value changes externally (e.g., reset)
+  useEffect(() => {
+    if (!isFocused) {
+      setInputValue(formatValue ? formatValue(value) : String(value));
+    }
+  }, [value, isFocused]);
+
+  // Clear error after a delay
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  function handleBlur() {
+    setIsFocused(false);
+    const parsed = parseFloat(inputValue);
+    if (!isFinite(parsed)) {
+      setError('Enter a valid number');
+      setInputValue(formatValue ? formatValue(value) : String(value));
+    } else if (min != null && parsed < min) {
+      setError(`Min: ${min}`);
+      const clamped = min;
+      if (clamped !== value) onChange(clamped);
+      setInputValue(formatValue ? formatValue(clamped) : String(clamped));
+    } else if (max != null && parsed > max) {
+      setError(`Max: ${max}`);
+      const clamped = max;
+      if (clamped !== value) onChange(clamped);
+      setInputValue(formatValue ? formatValue(clamped) : String(clamped));
+    } else {
+      // Only trigger onChange if value actually changed
+      if (parsed !== value) onChange(parsed);
+      setInputValue(formatValue ? formatValue(parsed) : String(parsed));
+    }
+  }
+
+  return html`
+    <${React.Fragment}>
+      <input type="text"
+        className=${`cell-editable ${isEdited ? 'cell-edited' : 'cell-default'}${error ? ' cell-error' : ''}`}
+        value=${inputValue}
+        onFocus=${() => setIsFocused(true)}
+        onBlur=${handleBlur}
+        onChange=${e => setInputValue(e.target.value)} />
+      ${isEdited && html`
+        <button className="btn-reset" onClick=${onReset}
+          aria-label="Reset to default"
+          title="Reset to default">↺</button>
+      `}
+      ${error && html`<span className="cell-error-msg">${error}</span>`}
+    </${React.Fragment}>
+  `;
+}
+
 const ALL_ACCEL_KEYS = Object.keys(ACCELERATORS);
 
-export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible, initialCustomDays, onTableStateChange } = {}) {
+export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible, initialCustomDays, initialCustomChips, onTableStateChange } = {}) {
   const [visible, setVisible] = useState(() => {
     if (initialVisible) return initialVisible;
     const init = {};
@@ -260,10 +332,11 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
   // Per-accelerator overrides: { [accelKey]: { mfu?, scalingFactor?, costPerChipHour? } }
   const [overrides, setOverrides] = useState(initialOverrides || {});
   const [customDays, setCustomDays] = useState(initialCustomDays || '');
+  const [customChips, setCustomChips] = useState(initialCustomChips || '');
 
   useEffect(() => {
-    if (onTableStateChange) onTableStateChange({ overrides, visible, customDays });
-  }, [overrides, visible, customDays]);
+    if (onTableStateChange) onTableStateChange({ overrides, visible, customDays, customChips });
+  }, [overrides, visible, customDays, customChips]);
 
   const hasResults = modelFlops != null && modelFlops > 0;
   const visibleKeys = ALL_ACCEL_KEYS.filter(k => visible[k]);
@@ -355,35 +428,39 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
       </div>
       <table aria-label="Accelerator comparison">
         <thead>
-          ${hasResults && html`
-            <tr className="super-header-row">
-              <th colSpan="8"></th>
-              <th colSpan=${TIME_PERIODS.length + 1} className="super-header col-sep">
-                # of chips required to train model
-              </th>
-            </tr>
-          `}
+          <tr className="super-header-row">
+            <th colSpan="8"></th>
+            <th className="super-header col-sep">
+              <input type="number" className="custom-chips-input"
+                placeholder="#"
+                value=${customChips}
+                min="1" step="1"
+                onChange=${e => setCustomChips(e.target.value)} />${' '}chips train in...
+            </th>
+            <th colSpan=${TIME_PERIODS.length + 1} className="super-header col-sep">
+              # of chips required to train model in...
+            </th>
+          </tr>
           <tr>
             <th>Accelerator</th>
             <th data-formula="Peak BF16 throughput per chip">BF16 FLOP/s <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.bf16}>ⓘ</span></th>
             <th data-formula="Chips per pod (TPUs only)">Chips/Pod <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.chipsPod}>ⓘ</span></th>
             <th data-formula="Effective FLOP/s = BF16 × MFU">MFU <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.mfu}>ⓘ</span></th>
-            <th data-formula="Penalty = SF^log₂(pods or chips)">Scale Coef. <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.scaling}>ⓘ</span></th>
+            <th data-formula="Penalty = Scale Coef.^log₂(pods or chips)">Scale Coef. <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.scaling}>ⓘ</span></th>
             <th data-formula="Cost per chip-hour in USD">$/hr <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.cost}>ⓘ</span></th>
-            ${hasResults && html`
-              <th className="col-sep" data-formula="HW FLOPs = Model FLOPs / MFU">HW FLOPs</th>
-              <th className="result-header" data-formula="Cost = (HW FLOPs / BF16) / 3600 × $/hr">Total Cost</th>
-              ${TIME_PERIODS.map((p, i) => html`
-                <th key=${p.label} className=${`result-header${i === 0 ? ' col-sep' : ''}`} data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">${p.label}</th>
-              `)}
-              <th className="result-header" data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">
-                <input type="number" className="custom-days-input"
-                  placeholder="#"
-                  value=${customDays}
-                  min="1" step="1"
-                  onChange=${e => setCustomDays(e.target.value)} />${' '}days
-              </th>
-            `}
+            <th className="col-sep" data-formula="HW FLOPs = Model FLOPs / MFU">HW FLOPs</th>
+            <th className="result-header" data-formula="Cost = (HW FLOPs / BF16) / 3600 × $/hr">Total Cost</th>
+            <th className="result-header col-sep" data-formula="Time = HW FLOPs / (BF16 × chips × penalty)">Time</th>
+            ${TIME_PERIODS.map((p, i) => html`
+              <th key=${p.label} className=${`result-header${i === 0 ? ' col-sep' : ''}`} data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">${p.label}</th>
+            `)}
+            <th className="result-header" data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">
+              <input type="number" className="custom-days-input"
+                placeholder="#"
+                value=${customDays}
+                min="1" step="1"
+                onChange=${e => setCustomDays(e.target.value)} />${' '}days
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -402,59 +479,63 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
                 <td>${formatSci(a.bf16Flops)}</td>
                 <td>${a.chipsPerPod ?? '\u2014'}</td>
                 <td className="editable-cell">
-                  <input type="number"
-                    className=${`cell-editable ${isEdited(key, 'mfu') ? 'cell-edited' : 'cell-default'}`}
+                  <${EditableCell}
                     value=${mfu}
-                    step="0.01" min="0.01" max="1"
-                    onChange=${e => {
-                      const v = parseFloat(e.target.value);
-                      if (isFinite(v) && v >= 0.01 && v <= 1) setOverride(key, 'mfu', v);
-                    }} />
-                  ${isEdited(key, 'mfu') && html`
-                    <button className="btn-reset" onClick=${() => resetField(key, 'mfu')}
-                      aria-label=${`Reset MFU for ${a.name}`}
-                      title="Reset to default">↺</button>
-                  `}
+                    defaultValue=${a.defaultMfu}
+                    onChange=${v => setOverride(key, 'mfu', v)}
+                    onReset=${() => resetField(key, 'mfu')}
+                    isEdited=${isEdited(key, 'mfu')}
+                    min=${0.01}
+                    max=${1} />
                 </td>
                 <td className="editable-cell">
-                  <input type="number"
-                    className=${`cell-editable ${isEdited(key, 'scalingFactor') ? 'cell-edited' : 'cell-default'}`}
+                  <${EditableCell}
                     value=${scalingFactor}
-                    step="0.01" min="0.01" max="1"
-                    onChange=${e => {
-                      const v = parseFloat(e.target.value);
-                      if (isFinite(v) && v >= 0.01 && v <= 1) setOverride(key, 'scalingFactor', v);
-                    }} />
-                  ${isEdited(key, 'scalingFactor') && html`
-                    <button className="btn-reset" onClick=${() => resetField(key, 'scalingFactor')}
-                      aria-label=${`Reset scaling factor for ${a.name}`}
-                      title="Reset to default">↺</button>
-                  `}
+                    defaultValue=${a.defaultScalingFactor}
+                    onChange=${v => setOverride(key, 'scalingFactor', v)}
+                    onReset=${() => resetField(key, 'scalingFactor')}
+                    isEdited=${isEdited(key, 'scalingFactor')}
+                    min=${0.01}
+                    max=${1} />
                 </td>
                 <td className="editable-cell">
-                  <input type="number"
-                    className=${`cell-editable ${isEdited(key, 'costPerChipHour') ? 'cell-edited' : 'cell-default'}`}
-                    value=${costPerChipHour.toFixed(2)}
-                    step="0.10" min="0"
-                    onChange=${e => {
-                      const v = parseFloat(e.target.value);
-                      if (isFinite(v) && v >= 0) setOverride(key, 'costPerChipHour', v);
-                    }} />
-                  ${isEdited(key, 'costPerChipHour') && html`
-                    <button className="btn-reset" onClick=${() => resetField(key, 'costPerChipHour')}
-                      aria-label=${`Reset cost for ${a.name}`}
-                      title="Reset to default">↺</button>
-                  `}
+                  <${EditableCell}
+                    value=${costPerChipHour}
+                    defaultValue=${a.defaultCostPerChipHour}
+                    onChange=${v => setOverride(key, 'costPerChipHour', v)}
+                    onReset=${() => resetField(key, 'costPerChipHour')}
+                    isEdited=${isEdited(key, 'costPerChipHour')}
+                    formatValue=${v => v.toFixed(2)}
+                    min=${0} />
                 </td>
-                ${results && html`
-                  <td className="col-sep">${formatSci(results.totalHardwareFlops)}</td>
-                  <td className="result-cell">${formatCost(results.totalCost)}</td>
-                  ${results.perPeriod.map((p, i) => {
+                <td className="col-sep">${results ? formatSci(results.totalHardwareFlops) : '\u2014'}</td>
+                <td className="result-cell">${results ? formatCost(results.totalCost) : '\u2014'}</td>
+                <td className="result-cell col-sep">${(() => {
+                  const parsedChips = parseInt(customChips, 10);
+                  if (!results || !isFinite(parsedChips) || parsedChips <= 0) return '\u2014';
+                  const timeResult = computeTimeForChips(results.totalHardwareFlops, a, scalingFactor, parsedChips);
+                  if (!timeResult) return '\u2014';
+                  const isGpu = a.chipsPerPod == null;
+                  const dfExpr = isGpu ? 'chips' : 'chips / chipsPerPod';
+                  const penaltyTip = `scaling penalty = min(1, ${scalingFactor}^log₂(${dfExpr}))`;
+                  return html`
+                    <span className="time-value">${formatDuration(timeResult.days, timeResult.hours)}</span>
+                    ${timeResult.pods != null && html`
+                      <span className="pod-count">${timeResult.pods} ${timeResult.pods === 1 ? 'pod' : 'pods'} (<span className="penalty-hint" title=${penaltyTip}>${timeResult.penalty.toFixed(2)}×</span>)</span>
+                    `}
+                    ${timeResult.pods == null && html`
+                      <span className="pod-count"><span className="penalty-hint" title=${penaltyTip}>${timeResult.penalty.toFixed(2)}×</span></span>
+                    `}
+                  `;
+                })()}</td>
+                ${TIME_PERIODS.map((period, i) => {
+                  const p = results?.perPeriod?.find(r => r.label === period.label);
+                  if (p) {
                     const isGpu = a.chipsPerPod == null;
                     const dfExpr = isGpu ? 'chips' : 'chips / chipsPerPod';
                     const penaltyTip = `scaling penalty = min(1, ${scalingFactor}^log₂(${dfExpr}))`;
                     return html`
-                    <td key=${p.label} className=${`result-cell${i === 0 ? ' col-sep' : ''}`}>
+                    <td key=${period.label} className=${`result-cell${i === 0 ? ' col-sep' : ''}`}>
                       <span className="chip-count">${p.chips.toLocaleString('en-US')}</span>
                       ${p.pods != null && html`
                         <span className="pod-count">${p.pods} ${p.pods === 1 ? 'pod' : 'pods'} (<span className="penalty-hint" title=${penaltyTip}>${p.penalty.toFixed(2)}×</span>)</span>
@@ -463,9 +544,28 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
                         <span className="pod-count"><span className="penalty-hint" title=${penaltyTip}>${p.penalty.toFixed(2)}×</span></span>
                       `}
                     </td>
-                  `})}
-                  ${!rowOverrides.customDays && html`<td></td>`}
-                `}
+                  `} else {
+                    return html`<td key=${period.label} className=${`result-cell${i === 0 ? ' col-sep' : ''}`}>\u2014</td>`;
+                  }
+                })}
+                <td className="result-cell">${(() => {
+                  const customResult = results?.perPeriod?.find(r => r.label.includes('days'));
+                  if (customResult) {
+                    const isGpu = a.chipsPerPod == null;
+                    const dfExpr = isGpu ? 'chips' : 'chips / chipsPerPod';
+                    const penaltyTip = `scaling penalty = min(1, ${scalingFactor}^log₂(${dfExpr}))`;
+                    return html`
+                      <span className="chip-count">${customResult.chips.toLocaleString('en-US')}</span>
+                      ${customResult.pods != null && html`
+                        <span className="pod-count">${customResult.pods} ${customResult.pods === 1 ? 'pod' : 'pods'} (<span className="penalty-hint" title=${penaltyTip}>${customResult.penalty.toFixed(2)}×</span>)</span>
+                      `}
+                      ${customResult.pods == null && html`
+                        <span className="pod-count"><span className="penalty-hint" title=${penaltyTip}>${customResult.penalty.toFixed(2)}×</span></span>
+                      `}
+                    `;
+                  }
+                  return '\u2014';
+                })()}</td>
               </tr>
             `;
           })}
@@ -503,7 +603,7 @@ export function App() {
   function getCurrentState() {
     const ms = modelStateRef.current || {};
     const ts = tableStateRef.current || {};
-    return { ...ms, overrides: ts.overrides || {}, visible: ts.visible || {}, customDays: ts.customDays || '' };
+    return { ...ms, overrides: ts.overrides || {}, visible: ts.visible || {}, customDays: ts.customDays || '', customChips: ts.customChips || '' };
   }
 
   function handleSaveCalc() {
@@ -686,7 +786,8 @@ export function App() {
           onTableStateChange=${onTableStateChange}
           initialOverrides=${initState?.overrides}
           initialVisible=${initState?.visible}
-          initialCustomDays=${initState?.customDays} />
+          initialCustomDays=${initState?.customDays}
+          initialCustomChips=${initState?.customChips} />
       </main>
       ${modalOpen && html`
         <${SavedCalcsModal}

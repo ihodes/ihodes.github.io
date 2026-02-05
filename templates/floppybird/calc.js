@@ -113,6 +113,15 @@ export function formatCount(n) {
 // Accelerator database
 // BF16 FLOP/s values from README; NVIDIA values (except B200) are reasonable estimates.
 export const ACCELERATORS = {
+  A2: {
+    name: 'A2',
+    vendor: 'nvidia',
+    bf16Flops: 1.8e13,
+    chipsPerPod: null,
+    defaultMfu: 0.35,
+    defaultScalingFactor: 0.99,
+    defaultCostPerChipHour: 0,
+  },
   A100: {
     name: 'A100',
     vendor: 'nvidia',
@@ -120,25 +129,34 @@ export const ACCELERATORS = {
     chipsPerPod: null,
     defaultMfu: 0.35,
     defaultScalingFactor: 0.99,
-    defaultCostPerChipHour: 3.5,
+    defaultCostPerChipHour: 1.80,
   },
   H100: {
     name: 'H100',
     vendor: 'nvidia',
-    bf16Flops: 9.89e14,
+    bf16Flops: 1.979e15,
     chipsPerPod: null,
     defaultMfu: 0.35,
     defaultScalingFactor: 0.99,
-    defaultCostPerChipHour: 3.5,
+    defaultCostPerChipHour: 3.00,
   },
   H200: {
     name: 'H200',
     vendor: 'nvidia',
-    bf16Flops: 9.89e14,
+    bf16Flops: 1.979e15,
     chipsPerPod: null,
     defaultMfu: 0.35,
     defaultScalingFactor: 0.99,
-    defaultCostPerChipHour: 3.5,
+    defaultCostPerChipHour: 6.30,
+  },
+  B100: {
+    name: 'B100',
+    vendor: 'nvidia',
+    bf16Flops: 1.75e15,
+    chipsPerPod: null,
+    defaultMfu: 0.35,
+    defaultScalingFactor: 0.99,
+    defaultCostPerChipHour: 0,
   },
   B200: {
     name: 'B200',
@@ -147,7 +165,7 @@ export const ACCELERATORS = {
     chipsPerPod: null,
     defaultMfu: 0.35,
     defaultScalingFactor: 0.99,
-    defaultCostPerChipHour: 3.5,
+    defaultCostPerChipHour: 4.99,
   },
   v4p: {
     name: 'v4p',
@@ -156,7 +174,7 @@ export const ACCELERATORS = {
     chipsPerPod: 4096,
     defaultMfu: 0.5,
     defaultScalingFactor: 0.94,
-    defaultCostPerChipHour: 3.5,
+    defaultCostPerChipHour: 3.22,
   },
   v5e: {
     name: 'v5e',
@@ -165,7 +183,7 @@ export const ACCELERATORS = {
     chipsPerPod: 256,
     defaultMfu: 0.6,
     defaultScalingFactor: 0.94,
-    defaultCostPerChipHour: 3.5,
+    defaultCostPerChipHour: 1.20,
   },
   v5p: {
     name: 'v5p',
@@ -174,7 +192,7 @@ export const ACCELERATORS = {
     chipsPerPod: 8960,
     defaultMfu: 0.6,
     defaultScalingFactor: 0.94,
-    defaultCostPerChipHour: 3.5,
+    defaultCostPerChipHour: 4.20,
   },
   v6e: {
     name: 'v6e',
@@ -183,7 +201,7 @@ export const ACCELERATORS = {
     chipsPerPod: 256,
     defaultMfu: 0.35,
     defaultScalingFactor: 0.94,
-    defaultCostPerChipHour: 3.5,
+    defaultCostPerChipHour: 2.70,
   },
 };
 
@@ -284,6 +302,49 @@ export function computeChipsNeeded(hwFlops, accel, scalingFactor, durationSecond
   const penalty = Math.min(1, scalingFactor ** doublings);
 
   return { chips, pods, penalty };
+}
+
+/**
+ * Compute training time given a fixed number of chips.
+ * Returns { seconds, days, hours, penalty, pods }
+ */
+export function computeTimeForChips(hwFlops, accel, scalingFactor, chips) {
+  if (chips <= 0) return null;
+
+  const isGpu = accel.vendor === 'nvidia';
+  const pods = isGpu ? null : Math.ceil(chips / accel.chipsPerPod);
+
+  // Calculate penalty for this chip count
+  let df;
+  if (isGpu) {
+    df = chips;
+  } else {
+    df = chips / accel.chipsPerPod;
+  }
+  const doublings = Math.max(0, Math.log2(df));
+  const penalty = Math.min(1, scalingFactor ** doublings);
+
+  // duration = HW FLOPs / (chips × BF16 × penalty)
+  const seconds = hwFlops / (chips * accel.bf16Flops * penalty);
+  const days = seconds / 86400;
+  const hours = (seconds % 86400) / 3600;
+
+  return { seconds, days, hours, penalty, pods };
+}
+
+/**
+ * Format duration as "X days" or "X days Y hrs" if days < 5
+ */
+export function formatDuration(days, hours) {
+  const d = Math.floor(days);
+  const h = Math.round(hours);
+  if (days >= 5) {
+    return `${d} days`;
+  } else if (d > 0) {
+    return `${d}d ${h}h`;
+  } else {
+    return `${h} hrs`;
+  }
 }
 
 /**

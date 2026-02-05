@@ -413,6 +413,7 @@ body {
 .editable-cell {
   position: relative;
   white-space: nowrap;
+  min-width: 5.5rem; /* Reserve space for input + reset button */
 }
 
 .cell-editable {
@@ -422,7 +423,7 @@ body {
   border: 1px solid transparent;
   padding: 0.15rem 0.3rem;
   border-radius: 2px;
-  width: 4.5rem;
+  width: 3.8rem;
   color: var(--fg);
   -moz-appearance: textfield;
 }
@@ -467,6 +468,31 @@ body {
 
 .btn-reset:hover {
   color: var(--fg);
+}
+
+.cell-error {
+  border-color: #c44 !important;
+  background: rgba(204, 68, 68, 0.1);
+}
+
+.cell-error-msg {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  background: #c44;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 2px;
+  white-space: nowrap;
+  z-index: 10;
+  margin-top: 2px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ─── Saved Calcs Modal (Phase 7) ────────────────────── */
@@ -659,13 +685,18 @@ input:focus-visible {
     padding: 0.3rem 0.5rem;
   }
 
+  .editable-cell {
+    min-width: 4.5rem;
+  }
+
   .cell-editable {
-    width: 3.5rem;
+    width: 3rem;
     font-size: 0.8rem;
   }
 }
 
-.custom-days-input {
+.custom-days-input,
+.custom-chips-input {
   font-family: inherit;
   font-size: 0.8rem;
   width: 4rem;
@@ -678,9 +709,16 @@ input:focus-visible {
 }
 
 .custom-days-input::-webkit-inner-spin-button,
-.custom-days-input::-webkit-outer-spin-button {
+.custom-days-input::-webkit-outer-spin-button,
+.custom-chips-input::-webkit-inner-spin-button,
+.custom-chips-input::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+.time-value {
+  display: block;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ─── Toast ──────────────────────────────────────────── */
