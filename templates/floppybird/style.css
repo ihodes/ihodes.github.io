@@ -93,6 +93,51 @@ body {
   margin-left: 0.3rem;
 }
 
+/* ─── Menubar Layout with Tabs ───────────────────────── */
+
+.menubar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tab {
+  font-family: inherit;
+  font-size: 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.tab:hover {
+  background: var(--bg-hover);
+  color: var(--fg);
+}
+
+.page-desc {
+  font-size: 0.8rem;
+  color: var(--fg-muted);
+  font-style: italic;
+  margin-left: 0.75rem;
+}
+
+.tab.tab-active {
+  color: var(--fg);
+  background: rgba(247, 220, 111, 0.18);
+  border: 1px solid #f7dc6f;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  transform: translateY(0.5px);
+}
+
 /* ─── Model Spec ──────────────────────────────────────── */
 
 .model-spec {
@@ -718,11 +763,19 @@ input:focus-visible {
   }
 }
 
+.accel-table th.chips-train-header {
+  white-space: normal;
+  max-width: 6rem;
+  vertical-align: middle;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
 .custom-days-input,
 .custom-chips-input {
   font-family: inherit;
   font-size: 0.8rem;
-  width: 4rem;
+  width: 3.5rem;
   background: var(--bg-input);
   border: 1px solid var(--border);
   color: var(--fg);
@@ -742,6 +795,48 @@ input:focus-visible {
 .time-value {
   display: block;
   font-variant-numeric: tabular-nums;
+}
+
+/* ─── Reverse Page ───────────────────────────────────── */
+
+.reverse-table table {
+  width: auto;
+}
+
+.reverse-info-line {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+  font-style: italic;
+  margin-bottom: 0.25rem;
+}
+
+.reverse-selected-row {
+  background: rgba(247, 220, 111, 0.15);
+}
+
+.reverse-selected-row td {
+  font-weight: 600;
+}
+
+.accel-table td[data-formula]:hover,
+.accel-table td[title] {
+  position: relative;
+}
+
+.accel-table td[data-formula]:hover::after {
+  content: attr(data-formula);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 4px);
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
 }
 
 /* ─── Toast ──────────────────────────────────────────── */

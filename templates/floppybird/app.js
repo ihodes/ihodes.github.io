@@ -1,13 +1,24 @@
 import React, { createElement, useState, useEffect, useCallback, useRef } from 'react';
 import htm from 'htm';
-import { ACCELERATORS, DEFAULT_VISIBLE, TIME_PERIODS, formatSci, formatEng, formatCount, formatCost, computeModelFlops, computeResults, computeTimeForChips, formatDuration, flopEmoji, saveState, loadState, loadSavedCalcs, saveCalcToList, deleteCalcFromList, togglePinCalc, getSortedCalcs, calcDisplayName, generateCSV, SAVED_LIST_KEY } from './calc.js';
+import { ACCELERATORS, DEFAULT_VISIBLE, TIME_PERIODS, UNIT_TO_SECONDS, formatSci, formatEng, formatCount, formatCost, computeModelFlops, computeModelFlopsFromChips, computeResults, computeChipsNeeded, computeTimeForChips, formatDuration, flopEmoji, saveState, loadState, loadSavedCalcs, saveCalcToList, deleteCalcFromList, togglePinCalc, getSortedCalcs, calcDisplayName, generateCSV, SAVED_LIST_KEY } from './calc.js';
 
 const html = htm.bind(createElement);
 
-export function Menubar({ onOpenSaved, onNewCalc } = {}) {
+export function Menubar({ page, onPageChange, onOpenSaved, onNewCalc } = {}) {
   return html`
     <header className="menubar">
-      <span className="logo"><span className="pixel-bird"></span>floppybird <span className="logo-subtitle">model budget calculator</span></span>
+      <div className="menubar-left">
+        <span className="logo"><span className="pixel-bird"></span>floppybird</span>
+        <div className="nav-tabs">
+          <button className=${`tab${page === 'forward' ? ' tab-active' : ''}`}
+            onClick=${() => onPageChange('forward')}>FLOPs → Chips <span className="kbd-hint">1</span></button>
+          <button className=${`tab${page === 'reverse' ? ' tab-active' : ''}`}
+            onClick=${() => onPageChange('reverse')}>Chips → FLOPs <span className="kbd-hint">2</span></button>
+        </div>
+        <span className="page-desc">${page === 'forward'
+          ? 'Given model FLOPs, how many chips and how much time do I need?'
+          : 'Given chips and time, how many model FLOPs do I get?'}</span>
+      </div>
       <nav>
         <button className="btn-saved" aria-label="Saved Calcs (s)" onClick=${onOpenSaved}>Saved Calcs <span className="kbd-hint">s</span></button>
         <button className="btn-new" aria-label="New Calc (Shift+=)" onClick=${onNewCalc}>New Calc <span className="kbd-hint">⇧+</span></button>
@@ -249,6 +260,8 @@ export function handleKeyboardShortcut(e) {
   const tag = e.target?.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return null;
 
+  if (e.key === '1') return 'page-forward';
+  if (e.key === '2') return 'page-reverse';
   if (e.key === 'n') return 'focus-name';
   if (e.key === 'm') return 'focus-calc-type';
   if (e.key === 's') return 'open-saved';
@@ -329,7 +342,7 @@ function EditableCell({ value, defaultValue, onChange, onReset, isEdited, step, 
 
 const ALL_ACCEL_KEYS = Object.keys(ACCELERATORS);
 
-export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible, initialCustomDays, initialCustomChips, onTableStateChange } = {}) {
+export function AcceleratorTable({ modelFlops, overrides, onOverrideChange, onOverrideReset, initialVisible, initialCustomDays, initialCustomChips, onTableStateChange } = {}) {
   const [visible, setVisible] = useState(() => {
     if (initialVisible) return initialVisible;
     const init = {};
@@ -339,38 +352,18 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
     return init;
   });
 
-  // Per-accelerator overrides: { [accelKey]: { mfu?, scalingFactor?, costPerChipHour? } }
-  const [overrides, setOverrides] = useState(initialOverrides || {});
   const [customDays, setCustomDays] = useState(initialCustomDays || '');
   const [customChips, setCustomChips] = useState(initialCustomChips || '');
 
   useEffect(() => {
-    if (onTableStateChange) onTableStateChange({ overrides, visible, customDays, customChips });
-  }, [overrides, visible, customDays, customChips]);
+    if (onTableStateChange) onTableStateChange({ visible, customDays, customChips });
+  }, [visible, customDays, customChips]);
 
   const hasResults = modelFlops != null && modelFlops > 0;
   const visibleKeys = ALL_ACCEL_KEYS.filter(k => visible[k]);
 
   function toggleAccel(key) {
     setVisible(prev => ({ ...prev, [key]: !prev[key] }));
-  }
-
-  function setOverride(accelKey, field, value) {
-    setOverrides(prev => {
-      const accelOverrides = { ...prev[accelKey] };
-      accelOverrides[field] = value;
-      return { ...prev, [accelKey]: accelOverrides };
-    });
-  }
-
-  function resetField(accelKey, field) {
-    setOverrides(prev => {
-      const accelOverrides = { ...prev[accelKey] };
-      delete accelOverrides[field];
-      const next = { ...prev, [accelKey]: accelOverrides };
-      if (Object.keys(next[accelKey]).length === 0) delete next[accelKey];
-      return next;
-    });
   }
 
   function getVal(accelKey, field) {
@@ -440,7 +433,7 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
         <thead>
           <tr className="super-header-row">
             <th colSpan="8"></th>
-            <th className="super-header col-sep">
+            <th rowSpan="2" className="super-header col-sep chips-train-header" data-formula="Time = HW FLOPs / (BF16 × chips × penalty)">
               <input type="number" className="custom-chips-input"
                 placeholder="#"
                 value=${customChips}
@@ -455,12 +448,11 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
             <th>Accelerator</th>
             <th data-formula="Peak BF16 throughput per chip">BF16 FLOP/s <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.bf16}>ⓘ</span></th>
             <th data-formula="Chips per pod (TPUs only)">Chips/Pod <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.chipsPod}>ⓘ</span></th>
-            <th data-formula="Effective FLOP/s = BF16 × MFU">MFU <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.mfu}>ⓘ</span></th>
-            <th data-formula="Penalty = Scale Coef.^log₂(pods or chips)">Scale Coef. <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.scaling}>ⓘ</span></th>
-            <th data-formula="Cost per chip-hour in USD">$/hr <span className="info-tip" data-tip=${COLUMN_TOOLTIPS.cost}>ⓘ</span></th>
+            <th data-formula=${COLUMN_TOOLTIPS.mfu}>MFU</th>
+            <th data-formula=${COLUMN_TOOLTIPS.scaling}>Scale Coef.</th>
+            <th data-formula=${COLUMN_TOOLTIPS.cost}>$/hr</th>
             <th className="col-sep" data-formula="HW FLOPs = Model FLOPs / MFU">HW FLOPs</th>
             <th className="result-header" data-formula="Cost = (HW FLOPs / BF16) / 3600 × $/hr">Total Cost</th>
-            <th className="result-header col-sep" data-formula="Time = HW FLOPs / (BF16 × chips × penalty)">Time</th>
             ${TIME_PERIODS.map((p, i) => html`
               <th key=${p.label} className=${`result-header${i === 0 ? ' col-sep' : ''}`} data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">${p.label}</th>
             `)}
@@ -492,8 +484,8 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
                   <${EditableCell}
                     value=${mfu}
                     defaultValue=${a.defaultMfu}
-                    onChange=${v => setOverride(key, 'mfu', v)}
-                    onReset=${() => resetField(key, 'mfu')}
+                    onChange=${v => onOverrideChange(key, 'mfu', v)}
+                    onReset=${() => onOverrideReset(key, 'mfu')}
                     isEdited=${isEdited(key, 'mfu')}
                     min=${0.01}
                     max=${1} />
@@ -502,8 +494,8 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
                   <${EditableCell}
                     value=${scalingFactor}
                     defaultValue=${a.defaultScalingFactor}
-                    onChange=${v => setOverride(key, 'scalingFactor', v)}
-                    onReset=${() => resetField(key, 'scalingFactor')}
+                    onChange=${v => onOverrideChange(key, 'scalingFactor', v)}
+                    onReset=${() => onOverrideReset(key, 'scalingFactor')}
                     isEdited=${isEdited(key, 'scalingFactor')}
                     min=${0.01}
                     max=${1} />
@@ -512,8 +504,8 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
                   <${EditableCell}
                     value=${costPerChipHour}
                     defaultValue=${a.defaultCostPerChipHour}
-                    onChange=${v => setOverride(key, 'costPerChipHour', v)}
-                    onReset=${() => resetField(key, 'costPerChipHour')}
+                    onChange=${v => onOverrideChange(key, 'costPerChipHour', v)}
+                    onReset=${() => onOverrideReset(key, 'costPerChipHour')}
                     isEdited=${isEdited(key, 'costPerChipHour')}
                     formatValue=${v => v.toFixed(2)}
                     min=${0} />
@@ -526,7 +518,7 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
                   const timeResult = computeTimeForChips(results.totalHardwareFlops, a, scalingFactor, parsedChips);
                   if (!timeResult) return '\u2014';
                   const isGpu = a.chipsPerPod == null;
-                  const dfExpr = isGpu ? 'chips' : 'chips / chipsPerPod';
+                  const dfExpr = isGpu ? 'chips' : 'pods';
                   const penaltyTip = `scaling penalty = min(1, ${scalingFactor}^log₂(${dfExpr}))`;
                   return html`
                     <span className="time-value">${formatDuration(timeResult.days, timeResult.hours)}</span>
@@ -542,7 +534,7 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
                   const p = results?.perPeriod?.find(r => r.label === period.label);
                   if (p) {
                     const isGpu = a.chipsPerPod == null;
-                    const dfExpr = isGpu ? 'chips' : 'chips / chipsPerPod';
+                    const dfExpr = isGpu ? 'chips' : 'pods';
                     const penaltyTip = `scaling penalty = min(1, ${scalingFactor}^log₂(${dfExpr}))`;
                     return html`
                     <td key=${period.label} className=${`result-cell${i === 0 ? ' col-sep' : ''}`}>
@@ -562,7 +554,7 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
                   const customResult = results?.perPeriod?.find(r => r.label.includes('days'));
                   if (customResult) {
                     const isGpu = a.chipsPerPod == null;
-                    const dfExpr = isGpu ? 'chips' : 'chips / chipsPerPod';
+                    const dfExpr = isGpu ? 'chips' : 'pods';
                     const penaltyTip = `scaling penalty = min(1, ${scalingFactor}^log₂(${dfExpr}))`;
                     return html`
                       <span className="chip-count">${customResult.chips.toLocaleString('en-US')}</span>
@@ -585,11 +577,239 @@ export function AcceleratorTable({ modelFlops, initialOverrides, initialVisible,
   `;
 }
 
+const ALL_UNIT_KEYS = Object.keys(UNIT_TO_SECONDS);
+
+export function ReverseSpec({ onResultChange, onStateChange, initialState, overrides = {} } = {}) {
+  const init = initialState || {};
+  const [chips, setChips] = useState(init.reverseChips || '');
+  const [accelKey, setAccelKey] = useState(init.reverseAccelKey || 'H100');
+  const [timeValue, setTimeValue] = useState(init.reverseTimeValue || '');
+  const [timeUnit, setTimeUnit] = useState(init.reverseTimeUnit || 'days');
+
+  const parsedChips = (() => { const n = parseInt(chips, 10); return isFinite(n) && n > 0 ? n : null; })();
+  const parsedTime = parseFloat(timeValue);
+  const durationSeconds = isFinite(parsedTime) && parsedTime > 0
+    ? parsedTime * UNIT_TO_SECONDS[timeUnit]
+    : null;
+
+  const accel = ACCELERATORS[accelKey];
+  const accelOverrides = {
+    mfu: overrides[accelKey]?.mfu ?? accel.defaultMfu,
+    scalingFactor: overrides[accelKey]?.scalingFactor ?? accel.defaultScalingFactor,
+    costPerChipHour: overrides[accelKey]?.costPerChipHour ?? accel.defaultCostPerChipHour,
+  };
+  const result = (parsedChips && durationSeconds)
+    ? computeModelFlopsFromChips(parsedChips, accelKey, durationSeconds, accelOverrides)
+    : null;
+
+  useEffect(() => {
+    if (onResultChange) {
+      onResultChange(result ? {
+        chips: parsedChips,
+        accelKey,
+        durationSeconds,
+        modelFlops: result.modelFlops,
+        hardwareFlops: result.hardwareFlops,
+        timeValue: parsedTime,
+        timeUnit,
+      } : null);
+    }
+  }, [parsedChips, accelKey, durationSeconds, overrides]);
+
+  useEffect(() => {
+    if (onStateChange) onStateChange({ reverseChips: chips, reverseAccelKey: accelKey, reverseTimeValue: timeValue, reverseTimeUnit: timeUnit });
+  }, [chips, accelKey, timeValue, timeUnit]);
+
+  return html`
+    <section className="model-spec">
+      <div className="calc-inputs">
+        <label className="tufte-field">
+          <span className="tufte-label">Number of chips</span>
+          <input className="input-chips" type="text"
+            placeholder="e.g. 1024"
+            value=${chips}
+            onChange=${e => setChips(e.target.value)} />
+        </label>
+        <label className="tufte-field">
+          <span className="tufte-label">Chip type</span>
+          <select className="calc-type" aria-label="Chip type"
+            value=${accelKey}
+            onChange=${e => setAccelKey(e.target.value)}>
+            ${ALL_ACCEL_KEYS.map(k => html`<option key=${k} value=${k}>${ACCELERATORS[k].name}</option>`)}
+          </select>
+        </label>
+        <label className="tufte-field">
+          <span className="tufte-label">Time</span>
+          <input className="input-time-value" type="text"
+            placeholder="e.g. 30"
+            value=${timeValue}
+            onChange=${e => setTimeValue(e.target.value)} />
+        </label>
+        <label className="tufte-field">
+          <span className="tufte-label">Period</span>
+          <select className="calc-type" aria-label="Time unit"
+            value=${timeUnit}
+            onChange=${e => setTimeUnit(e.target.value)}>
+            ${ALL_UNIT_KEYS.map(u => html`<option key=${u} value=${u}>${u}</option>`)}
+          </select>
+        </label>
+      </div>
+      <div className="reverse-info-line">
+        A single ${accel.name} provides ${formatSci(accel.bf16Flops)} BF16 FLOP/s
+      </div>
+      <div className="flop-display" aria-live="polite">
+        <div className="flop-main-row">
+          <span className="flop-value">${result ? html`${(() => {
+            const exp = Math.floor(Math.log10(Math.abs(result.modelFlops)));
+            const mantissa = (result.modelFlops / 10 ** exp).toFixed(2);
+            return html`${mantissa} × 10<sup className="flop-exp">${exp}</sup>`;
+          })()}` : '\u2014'}</span>
+          <span className="flop-label">${' '}model FLOPs</span>
+          <span className="formula-desc">${' '}= chips × BF16 × penalty × time × MFU</span>
+        </div>
+        ${result && html`<div className="flop-eng">${(() => {
+          const exp = Math.floor(Math.log10(Math.abs(result.modelFlops)));
+          const mantissa = (result.modelFlops / 10 ** exp).toFixed(2);
+          return html`${mantissa}<span className="flop-eng-e">e</span>${exp}`;
+        })()}</div>`}
+      </div>
+    </section>
+  `;
+}
+
+export function ReverseResultsTable({ result, overrides = {}, onOverrideChange, onOverrideReset } = {}) {
+  if (!result) return null;
+
+  const { chips: inputChips, accelKey: selectedKey, durationSeconds, modelFlops, hardwareFlops, timeValue, timeUnit } = result;
+  const timeLabel = `${timeValue} ${timeUnit}`;
+
+  function getVal(accelKey, field) {
+    return overrides[accelKey]?.[field] ?? null;
+  }
+  function isEdited(accelKey, field) {
+    return overrides[accelKey]?.[field] != null;
+  }
+
+  const rows = ALL_ACCEL_KEYS.map(key => {
+    const accel = ACCELERATORS[key];
+    const isSelected = key === selectedKey;
+    const mfu = getVal(key, 'mfu') ?? accel.defaultMfu;
+    const scalingFactor = getVal(key, 'scalingFactor') ?? accel.defaultScalingFactor;
+    const costPerChipHour = getVal(key, 'costPerChipHour') ?? accel.defaultCostPerChipHour;
+    const accelOverrides = { mfu, scalingFactor, costPerChipHour };
+
+    if (isSelected) {
+      const selectedResult = computeModelFlopsFromChips(inputChips, key, durationSeconds, accelOverrides);
+      return {
+        key, accel, isSelected: true,
+        chips: inputChips,
+        mfu, scalingFactor, costPerChipHour,
+        pods: selectedResult.pods,
+        penalty: selectedResult.penalty,
+        hardwareFlops: selectedResult.hardwareFlops,
+        cost: selectedResult.cost,
+      };
+    }
+
+    // For other accelerators: how many chips needed for the same modelFlops in the same duration?
+    const hwFlopsNeeded = modelFlops / mfu;
+    const { chips, pods, penalty } = computeChipsNeeded(hwFlopsNeeded, accel, scalingFactor, durationSeconds);
+    const revResult = computeModelFlopsFromChips(chips, key, durationSeconds, accelOverrides);
+    const chipHours = chips * (durationSeconds / 3600);
+    const cost = chipHours * costPerChipHour;
+
+    return {
+      key, accel, isSelected: false,
+      chips, pods, penalty,
+      mfu, scalingFactor, costPerChipHour,
+      hardwareFlops: revResult.hardwareFlops,
+      cost,
+    };
+  });
+
+  return html`
+    <section className="accel-table reverse-table">
+      <table aria-label="Equivalent chip counts">
+        <thead>
+          <tr>
+            <th>Accelerator</th>
+            <th data-formula="Number of chips required">Chips</th>
+            <th data-formula="Number of pods (TPUs only)">Pods</th>
+            <th data-formula=${COLUMN_TOOLTIPS.mfu}>MFU</th>
+            <th data-formula=${COLUMN_TOOLTIPS.scaling}>Scale Coef.</th>
+            <th data-formula="Penalty = Scale Coef.^log₂(pods or chips)">Penalty</th>
+            <th className="result-header" data-formula="HW FLOPs = chips × BF16 × penalty × time">HW FLOPs</th>
+            <th data-formula=${COLUMN_TOOLTIPS.cost}>$/hr</th>
+            <th className="result-header" data-formula="Cost = chips × hours × $/hr">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => html`
+            <tr key=${r.key} className=${r.isSelected ? 'reverse-selected-row' : ''}>
+              <td>${r.accel.name}</td>
+              <td title=${`${r.chips.toLocaleString('en-US')} chips over ${timeLabel}`}>${r.chips.toLocaleString('en-US')}</td>
+              <td>${r.pods != null ? r.pods : '\u2014'}</td>
+              <td className="editable-cell">
+                <${EditableCell}
+                  value=${r.mfu}
+                  defaultValue=${r.accel.defaultMfu}
+                  onChange=${v => onOverrideChange(r.key, 'mfu', v)}
+                  onReset=${() => onOverrideReset(r.key, 'mfu')}
+                  isEdited=${isEdited(r.key, 'mfu')}
+                  min=${0.01}
+                  max=${1} />
+              </td>
+              <td className="editable-cell">
+                <${EditableCell}
+                  value=${r.scalingFactor}
+                  defaultValue=${r.accel.defaultScalingFactor}
+                  onChange=${v => onOverrideChange(r.key, 'scalingFactor', v)}
+                  onReset=${() => onOverrideReset(r.key, 'scalingFactor')}
+                  isEdited=${isEdited(r.key, 'scalingFactor')}
+                  min=${0.01}
+                  max=${1} />
+              </td>
+              <td title=${`min(1, ${r.scalingFactor}^log₂(${r.accel.vendor === 'nvidia' ? 'chips' : 'pods'}))`}>${r.penalty.toFixed(3)}</td>
+              <td className="result-cell" title=${`${formatSci(r.hardwareFlops)} = ${r.chips} × ${formatSci(r.accel.bf16Flops)} × ${r.penalty.toFixed(3)} × ${durationSeconds}s`}>${formatSci(r.hardwareFlops)}</td>
+              <td className="editable-cell">
+                <${EditableCell}
+                  value=${r.costPerChipHour}
+                  defaultValue=${r.accel.defaultCostPerChipHour}
+                  onChange=${v => onOverrideChange(r.key, 'costPerChipHour', v)}
+                  onReset=${() => onOverrideReset(r.key, 'costPerChipHour')}
+                  isEdited=${isEdited(r.key, 'costPerChipHour')}
+                  formatValue=${v => v.toFixed(2)}
+                  min=${0} />
+              </td>
+              <td className="result-cell">${r.cost > 0 ? formatCost(r.cost) : '\u2014'}</td>
+            </tr>
+          `)}
+        </tbody>
+      </table>
+    </section>
+  `;
+}
+
 export function App() {
   const saved = useRef(loadState());
+  const [page, setPage] = useState(saved.current?.page || 'forward');
   const [modelFlops, setModelFlops] = useState(null);
-  const modelStateRef = useRef(null);
-  const tableStateRef = useRef(null);
+  const [overrides, setOverrides] = useState(saved.current?.overrides || {});
+  const initState = saved.current || {};
+  const modelStateRef = useRef({
+    calcType: initState.calcType, activeParams: initState.activeParams,
+    totalParams: initState.totalParams, tokens: initState.tokens,
+    flops: initState.flops, modelName: initState.modelName,
+  });
+  const tableStateRef = useRef({
+    visible: initState.visible, customDays: initState.customDays, customChips: initState.customChips,
+  });
+  const reverseStateRef = useRef({
+    reverseChips: initState.reverseChips, reverseAccelKey: initState.reverseAccelKey,
+    reverseTimeValue: initState.reverseTimeValue, reverseTimeUnit: initState.reverseTimeUnit,
+  });
+  const reverseResultRef = useRef(null);
+  const [reverseResult, setReverseResult] = useState(null);
   const saveTimer = useRef(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [savedCalcs, setSavedCalcs] = useState(() => getSortedCalcs(loadSavedCalcs()));
@@ -613,7 +833,8 @@ export function App() {
   function getCurrentState() {
     const ms = modelStateRef.current || {};
     const ts = tableStateRef.current || {};
-    return { ...ms, overrides: ts.overrides || {}, visible: ts.visible || {}, customDays: ts.customDays || '', customChips: ts.customChips || '' };
+    const rs = reverseStateRef.current || {};
+    return { ...ms, ...rs, page, overrides, visible: ts.visible || {}, customDays: ts.customDays || '', customChips: ts.customChips || '' };
   }
 
   function handleSaveCalc() {
@@ -715,6 +936,45 @@ export function App() {
     scheduleSave();
   }
 
+  function handleOverrideChange(accelKey, field, value) {
+    setOverrides(prev => {
+      const accelOverrides = { ...prev[accelKey] };
+      accelOverrides[field] = value;
+      return { ...prev, [accelKey]: accelOverrides };
+    });
+    scheduleSave();
+  }
+
+  function handleOverrideReset(accelKey, field) {
+    setOverrides(prev => {
+      const accelOverrides = { ...prev[accelKey] };
+      delete accelOverrides[field];
+      const next = { ...prev, [accelKey]: accelOverrides };
+      if (Object.keys(next[accelKey]).length === 0) delete next[accelKey];
+      return next;
+    });
+    scheduleSave();
+  }
+
+  function onReverseStateChange(state) {
+    reverseStateRef.current = state;
+    scheduleSave();
+  }
+
+  function onReverseResultChange(result) {
+    reverseResultRef.current = result;
+    setReverseResult(result);
+  }
+
+  function handlePageChange(p) {
+    // Persist current state and update initState before switching
+    const current = { ...getCurrentState(), page: p };
+    saveState(current);
+    saved.current = current;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setPage(p);
+  }
+
   useEffect(() => {
     function onKeyDown(e) {
       // Modal-specific keyboard navigation
@@ -757,6 +1017,12 @@ export function App() {
         case 'blur':
           if (typeof document !== 'undefined') document.activeElement?.blur();
           break;
+        case 'page-forward':
+          handlePageChange('forward');
+          break;
+        case 'page-reverse':
+          handlePageChange('reverse');
+          break;
         case 'focus-name':
           document.querySelector('.model-name')?.focus();
           break;
@@ -778,26 +1044,41 @@ export function App() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [modalOpen, savedCalcs, selectedIndex]);
 
-  const initState = saved.current;
-
   return html`
     <div className="app">
-      <${Menubar} onOpenSaved=${openModal} onNewCalc=${handleNewCalc} />
+      <${Menubar} page=${page} onPageChange=${handlePageChange} onOpenSaved=${openModal} onNewCalc=${handleNewCalc} />
       <main>
-        <${ModelSpec}
-          key=${'ms-' + resetKey}
-          onFlopChange=${setModelFlops}
-          onStateChange=${onModelStateChange}
-          onSave=${handleSaveCalc}
-          initialState=${initState} />
-        <${AcceleratorTable}
-          key=${'at-' + resetKey}
-          modelFlops=${modelFlops}
-          onTableStateChange=${onTableStateChange}
-          initialOverrides=${initState?.overrides}
-          initialVisible=${initState?.visible}
-          initialCustomDays=${initState?.customDays}
-          initialCustomChips=${initState?.customChips} />
+        ${page === 'forward' && html`
+          <${ModelSpec}
+            key=${'ms-' + resetKey}
+            onFlopChange=${setModelFlops}
+            onStateChange=${onModelStateChange}
+            onSave=${handleSaveCalc}
+            initialState=${initState} />
+          <${AcceleratorTable}
+            key=${'at-' + resetKey}
+            modelFlops=${modelFlops}
+            overrides=${overrides}
+            onOverrideChange=${handleOverrideChange}
+            onOverrideReset=${handleOverrideReset}
+            onTableStateChange=${onTableStateChange}
+            initialVisible=${initState?.visible}
+            initialCustomDays=${initState?.customDays}
+            initialCustomChips=${initState?.customChips} />
+        `}
+        ${page === 'reverse' && html`
+          <${ReverseSpec}
+            key=${'rs-' + resetKey}
+            onResultChange=${onReverseResultChange}
+            onStateChange=${onReverseStateChange}
+            overrides=${overrides}
+            initialState=${initState} />
+          <${ReverseResultsTable}
+            result=${reverseResult}
+            overrides=${overrides}
+            onOverrideChange=${handleOverrideChange}
+            onOverrideReset=${handleOverrideReset} />
+        `}
       </main>
       ${modalOpen && html`
         <${SavedCalcsModal}

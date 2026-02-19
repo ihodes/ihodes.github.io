@@ -113,15 +113,6 @@ export function formatCount(n) {
 // Accelerator database
 // BF16 FLOP/s values from README; NVIDIA values (except B200) are reasonable estimates.
 export const ACCELERATORS = {
-  A2: {
-    name: 'A2',
-    vendor: 'nvidia',
-    bf16Flops: 1.8e13,
-    chipsPerPod: null,
-    defaultMfu: 0.35,
-    defaultScalingFactor: 0.97,
-    defaultCostPerChipHour: 0,
-  },
   A100: {
     name: 'A100',
     vendor: 'nvidia',
@@ -148,15 +139,6 @@ export const ACCELERATORS = {
     defaultMfu: 0.35,
     defaultScalingFactor: 0.97,
     defaultCostPerChipHour: 6.30,
-  },
-  B100: {
-    name: 'B100',
-    vendor: 'nvidia',
-    bf16Flops: 1.75e15,
-    chipsPerPod: null,
-    defaultMfu: 0.35,
-    defaultScalingFactor: 0.97,
-    defaultCostPerChipHour: 0,
   },
   B200: {
     name: 'B200',
@@ -213,6 +195,14 @@ export const TIME_PERIODS = [
   { label: '4 weeks', seconds: 2419200 },
   { label: '8 weeks', seconds: 4838400 },
 ];
+
+export const UNIT_TO_SECONDS = {
+  hours: 3600,
+  days: 86400,
+  weeks: 604800,
+  months: 2592000,
+  years: 31536000,
+};
 
 /**
  * Calculate model FLOPs based on calculator type.
@@ -347,6 +337,34 @@ export function computeTimeForChips(hwFlops, accel, scalingFactor, chips) {
   const hours = (seconds % 86400) / 3600;
 
   return { seconds, days, hours, penalty, pods };
+}
+
+/**
+ * Compute model FLOPs achievable from a given chip count and duration.
+ * Direct computation — no iteration needed since chip count is known.
+ * Returns { modelFlops, hardwareFlops, penalty, pods, cost }
+ */
+export function computeModelFlopsFromChips(chips, accelKey, durationSeconds, overrides = {}) {
+  const accel = ACCELERATORS[accelKey];
+  if (!accel) throw new Error(`Unknown accelerator: ${accelKey}`);
+
+  const mfu = overrides.mfu ?? accel.defaultMfu;
+  const scalingFactor = overrides.scalingFactor ?? accel.defaultScalingFactor;
+  const costPerChipHour = overrides.costPerChipHour ?? accel.defaultCostPerChipHour;
+
+  const isGpu = accel.vendor === 'nvidia';
+  const pods = isGpu ? null : Math.ceil(chips / accel.chipsPerPod);
+
+  const df = isGpu ? chips : chips / accel.chipsPerPod;
+  const doublings = Math.max(0, Math.log2(df));
+  const penalty = Math.min(1, scalingFactor ** doublings);
+
+  const hardwareFlops = chips * accel.bf16Flops * penalty * durationSeconds;
+  const modelFlops = hardwareFlops * mfu;
+  const chipHours = chips * (durationSeconds / 3600);
+  const cost = chipHours * costPerChipHour;
+
+  return { modelFlops, hardwareFlops, penalty, pods, cost };
 }
 
 /**
