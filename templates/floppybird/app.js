@@ -1,6 +1,6 @@
 import React, { createElement, useState, useEffect, useCallback, useRef } from 'react';
 import htm from 'htm';
-import { ACCELERATORS, DEFAULT_VISIBLE, TIME_PERIODS, formatSci, formatCount, formatCost, computeModelFlops, computeResults, computeTimeForChips, formatDuration, flopEmoji, saveState, loadState, loadSavedCalcs, saveCalcToList, deleteCalcFromList, togglePinCalc, getSortedCalcs, calcDisplayName, generateCSV, SAVED_LIST_KEY } from './calc.js';
+import { ACCELERATORS, DEFAULT_VISIBLE, TIME_PERIODS, formatSci, formatEng, formatCount, formatCost, computeModelFlops, computeResults, computeTimeForChips, formatDuration, flopEmoji, saveState, loadState, loadSavedCalcs, saveCalcToList, deleteCalcFromList, togglePinCalc, getSortedCalcs, calcDisplayName, generateCSV, SAVED_LIST_KEY } from './calc.js';
 
 const html = htm.bind(createElement);
 
@@ -217,10 +217,21 @@ export function ModelSpec({ onFlopChange, onStateChange, onSave, initialState } 
         `}
       </div>
       <div className="flop-display" aria-live="polite">
-        <span className="flop-value">${modelFlops ? formatSci(modelFlops) : '\u2014'}</span>
-        <span className="flop-label">${' '}model FLOPs</span>
-        ${(calcType === 'moe' || calcType === 'dense') && html`<span className="formula-desc">${' '}= 6 × P × T</span>`}
-        ${displayEmoji && html`<span className="flop-emoji">${' '}${displayEmoji}</span>`}
+        <div className="flop-main-row">
+          <span className="flop-value">${modelFlops ? html`${(() => {
+            const exp = Math.floor(Math.log10(Math.abs(modelFlops)));
+            const mantissa = (modelFlops / 10 ** exp).toFixed(2);
+            return html`${mantissa} × 10<sup className="flop-exp">${exp}</sup>`;
+          })()}` : '\u2014'}</span>
+          <span className="flop-label">${' '}model FLOPs</span>
+          ${(calcType === 'moe' || calcType === 'dense') && html`<span className="formula-desc">${' '}= 6 × P × T</span>`}
+          ${displayEmoji && html`<span className="flop-emoji">${' '}${displayEmoji}</span>`}
+        </div>
+        ${modelFlops && html`<div className="flop-eng">${(() => {
+          const exp = Math.floor(Math.log10(Math.abs(modelFlops)));
+          const mantissa = (modelFlops / 10 ** exp).toFixed(2);
+          return html`${mantissa}<span className="flop-eng-e">e</span>${exp}`;
+        })()}</div>`}
       </div>
     </section>
   `;

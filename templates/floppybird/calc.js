@@ -231,14 +231,31 @@ export function computeModelFlops(type, params = {}) {
   }
 }
 
+const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+
+function toSuperscript(n) {
+  const s = String(n);
+  return s.replace(/\d/g, d => SUPERSCRIPT_DIGITS[d]).replace('-', '⁻');
+}
+
 /**
- * Format number as "x.yz × 10^n".
+ * Format number as "x.yz × 10ⁿ" using Unicode superscript.
  */
 export function formatSci(n) {
   if (n === 0) return '0';
   const exp = Math.floor(Math.log10(Math.abs(n)));
   const mantissa = n / 10 ** exp;
-  return `${mantissa.toFixed(2)} × 10^${exp}`;
+  return `${mantissa.toFixed(2)} × 10${toSuperscript(exp)}`;
+}
+
+/**
+ * Format number in engineering notation, e.g. "6.00e22".
+ */
+export function formatEng(n) {
+  if (n === 0) return '0';
+  const exp = Math.floor(Math.log10(Math.abs(n)));
+  const mantissa = n / 10 ** exp;
+  return `${mantissa.toFixed(2)}e${exp}`;
 }
 
 /**

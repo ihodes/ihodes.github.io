@@ -245,8 +245,24 @@ body {
   margin-left: 0.5rem;
 }
 
+.flop-exp {
+  font-size: 0.6em;
+}
+
 .flop-emoji {
   margin-left: 0.25rem;
+}
+
+.flop-eng {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: -0.1rem;
+}
+
+.flop-eng-e {
+  font-size: 0.75em;
+  margin: 0 0.1em;
 }
 
 /* ─── Accelerator Table ───────────────────────────────── */
