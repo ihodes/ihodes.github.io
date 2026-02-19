@@ -360,8 +360,7 @@ body {
 }
 
 .accel-table table {
-  width: 100%;
-  min-width: 700px;
+  width: auto;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
@@ -444,7 +443,7 @@ body {
   padding-bottom: 0;
 }
 
-.super-header {
+.accel-table th.super-header {
   text-align: center;
   font-size: 0.8rem;
   font-style: italic;
@@ -478,10 +477,16 @@ body {
 
 /* ─── Editable Cells (Phase 4) ───────────────────────── */
 
+.cell-prefix {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+  margin-right: 0.1rem;
+}
+
 .editable-cell {
   position: relative;
   white-space: nowrap;
-  min-width: 5.5rem; /* Reserve space for input + reset button */
+  min-width: 4rem;
 }
 
 .cell-editable {
@@ -799,8 +804,10 @@ input:focus-visible {
 
 /* ─── Reverse Page ───────────────────────────────────── */
 
-.reverse-table table {
-  width: auto;
+.reverse-table th,
+.reverse-table td {
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .reverse-info-line {

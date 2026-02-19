@@ -432,7 +432,8 @@ export function AcceleratorTable({ modelFlops, overrides, onOverrideChange, onOv
       <table aria-label="Accelerator comparison">
         <thead>
           <tr className="super-header-row">
-            <th colSpan="8"></th>
+            <th colSpan="6"></th>
+            <th colSpan="2" className="super-header col-sep">Total</th>
             <th rowSpan="2" className="super-header col-sep chips-train-header" data-formula="Time = HW FLOPs / (BF16 × chips × penalty)">
               <input type="number" className="custom-chips-input"
                 placeholder="#"
@@ -452,7 +453,7 @@ export function AcceleratorTable({ modelFlops, overrides, onOverrideChange, onOv
             <th data-formula=${COLUMN_TOOLTIPS.scaling}>Scale Coef.</th>
             <th data-formula=${COLUMN_TOOLTIPS.cost}>$/hr</th>
             <th className="col-sep" data-formula="HW FLOPs = Model FLOPs / MFU">HW FLOPs</th>
-            <th className="result-header" data-formula="Cost = (HW FLOPs / BF16) / 3600 × $/hr">Total Cost</th>
+            <th className="result-header" data-formula="Cost = (HW FLOPs / BF16) / 3600 × $/hr">Cost</th>
             ${TIME_PERIODS.map((p, i) => html`
               <th key=${p.label} className=${`result-header${i === 0 ? ' col-sep' : ''}`} data-formula="Chips = HW FLOPs / (BF16 × penalty × seconds)">${p.label}</th>
             `)}
@@ -500,8 +501,7 @@ export function AcceleratorTable({ modelFlops, overrides, onOverrideChange, onOv
                     min=${0.01}
                     max=${1} />
                 </td>
-                <td className="editable-cell">
-                  <${EditableCell}
+                <td className="editable-cell"><span className="cell-prefix">$</span><${EditableCell}
                     value=${costPerChipHour}
                     defaultValue=${a.defaultCostPerChipHour}
                     onChange=${v => onOverrideChange(key, 'costPerChipHour', v)}
@@ -727,8 +727,41 @@ export function ReverseResultsTable({ result, overrides = {}, onOverrideChange, 
     };
   });
 
+  const [copyLabel, setCopyLabel] = useState('Copy CSV');
+
+  function handleCopyCSV() {
+    const headers = ['Accelerator', 'Chips', 'Pods', 'MFU', 'Scale Coef.', 'Penalty', 'HW FLOPs', '$/hr', 'Cost'];
+    const csvRows = [headers.join(',')];
+    for (const r of rows) {
+      csvRows.push([
+        r.accel.name,
+        r.chips,
+        r.pods != null ? r.pods : '',
+        r.mfu,
+        r.scalingFactor,
+        r.penalty.toFixed(3),
+        formatSci(r.hardwareFlops),
+        r.costPerChipHour.toFixed(2),
+        r.cost > 0 ? formatCost(r.cost) : '',
+      ].join(','));
+    }
+    const csv = csvRows.join('\n');
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(csv).then(() => {
+        setCopyLabel('Copied!');
+        setTimeout(() => setCopyLabel('Copy CSV'), 1500);
+      }).catch(() => { setCopyLabel('Failed'); setTimeout(() => setCopyLabel('Copy CSV'), 1500); });
+    }
+  }
+
   return html`
     <section className="accel-table reverse-table">
+      <div className="accel-table-toolbar">
+        <div></div>
+        <button className="btn-copy-csv" onClick=${handleCopyCSV}
+          aria-label="Copy table as CSV"
+          title="Copy table as CSV">${copyLabel}</button>
+      </div>
       <table aria-label="Equivalent chip counts">
         <thead>
           <tr>
@@ -771,8 +804,7 @@ export function ReverseResultsTable({ result, overrides = {}, onOverrideChange, 
               </td>
               <td title=${`min(1, ${r.scalingFactor}^log₂(${r.accel.vendor === 'nvidia' ? 'chips' : 'pods'}))`}>${r.penalty.toFixed(3)}</td>
               <td className="result-cell" title=${`${formatSci(r.hardwareFlops)} = ${r.chips} × ${formatSci(r.accel.bf16Flops)} × ${r.penalty.toFixed(3)} × ${durationSeconds}s`}>${formatSci(r.hardwareFlops)}</td>
-              <td className="editable-cell">
-                <${EditableCell}
+              <td className="editable-cell"><span className="cell-prefix">$</span><${EditableCell}
                   value=${r.costPerChipHour}
                   defaultValue=${r.accel.defaultCostPerChipHour}
                   onChange=${v => onOverrideChange(r.key, 'costPerChipHour', v)}
