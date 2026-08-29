@@ -182,6 +182,22 @@ span#date {
 }
 
 
+#content figure {
+    margin: 0 0 1em 0;
+}
+
+#content figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+#content figcaption {
+    font-size: 0.85em;
+    color: #777;
+    margin-top: 0.4em;
+}
+
 #copy {
     padding: 33px 33px;
     color: #343434

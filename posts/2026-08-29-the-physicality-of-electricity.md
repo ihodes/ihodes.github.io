@@ -1,11 +1,16 @@
 ---
 layout: post
-title: The Physicality of Electricity
+title: The physicality of electricity
 subtitle:
 summary:
 categories:
 date: 2026-08-29
 ---
+
+<figure>
+<img src="/images/grand-coulee-dam-three-rotor-installation.webp" alt="Installing turbine blades at Grand Coulee Dam's Nathaniel Washington Power Plant"/>
+<figcaption>December 1974. Installing turbine blades at Grand Coulee Dam's Nathaniel Washington Power Plant. Bureau of Reclamation/Courtesy photo</figcaption>
+</figure>
 
 The largest rotors in the Grand Coulee Dam weigh 2,000 tons each. The rushing waters of the Columbia River, gathered in Lake Roosevelt reservoir, spin these rotors, locked at 85.7 rotations per minute by the grid. Collectively, 21,000 tons of rotating steel spun by falling water provide 20 terawatt-hours of energy per year to the Western Interconnection.
 
